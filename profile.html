@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Your Profile - Vedam Open Source Club</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBO0PAmNKXjTJGH1aRsEc2vJJnR1Y-Tum8",
+            authDomain: "vedamopensource007.firebaseapp.com",
+            projectId: "vedamopensource007",
+            storageBucket: "vedamopensource007.firebasestorage.app",
+            messagingSenderId: "1097939608119",
+            appId: "1:1097939608119:web:90e2923b4c3ed3fd1515b2",
+            measurementId: "G-G8V5WT7S5V"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Make Firebase services available globally
+        window.auth = auth;
+        window.db = db;
+        window.setDoc = setDoc;
+        window.doc = doc;
+    </script>
+    
+    <style>
+        .profile-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+        }
+
+        .profile-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+        }
+
+        .profile-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .profile-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .profile-form {
+            padding: 2rem;
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group input.error {
+            border-color: #e53e3e;
+        }
+
+        .form-group input:disabled {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: #e53e3e;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .back-home {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            color: white;
+            text-decoration: none;
+            font-size: 1.2rem;
+            transition: color 0.3s ease;
+        }
+
+        .back-home:hover {
+            color: #ffd700;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .error-message-global {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            width: 50%;
+            transition: width 0.3s ease;
+        }
+
+
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        
+        <div class="profile-card">
+            <div class="profile-header">
+                <h1>Complete Your Profile</h1>
+                <p>Help us get to know you better</p>
+            </div>
+            
+            <div class="profile-form">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                
+                <div id="successMessage" class="success-message">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Profile saved successfully! Redirecting...</span>
+                </div>
+                
+                <div id="errorMessage" class="error-message-global">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>Please fill in all required fields.</span>
+                </div>
+                
+                <form id="profileForm">
+                    <div class="form-section">
+                        <h3 class="section-title">Personal Information</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">First Name *</label>
+                                <input type="text" id="firstName" name="firstName" required>
+                                <div class="error-message" id="firstNameError">First name is required</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="lastName">Last Name *</label>
+                                <input type="text" id="lastName" name="lastName" required>
+                                <div class="error-message" id="lastNameError">Last name is required</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="middleName">Middle Name</label>
+                            <input type="text" id="middleName" name="middleName">
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h3 class="section-title">Contact Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="phoneNumber">Phone Number *</label>
+                            <input type="tel" id="phoneNumber" name="phoneNumber" required>
+                            <div class="error-message" id="phoneNumberError">Phone number is required</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="whatsappNumber">WhatsApp Number *</label>
+                            <input type="tel" id="whatsappNumber" name="whatsappNumber" required>
+                            <div class="error-message" id="whatsappNumberError">WhatsApp number is required</div>
+                        </div>
+                        
+                        
+                        <div class="form-group">
+                            <label for="personalEmail">Personal Email ID *</label>
+                            <input type="email" id="personalEmail" name="personalEmail" required>
+                            <div class="error-message" id="personalEmailError">Personal email is required</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <span class="btn-text">Continue to GitHub</span>
+                            <div class="loading">
+                                <div class="spinner"></div>
+                            </div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simplified: do not auto-redirect away
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const user = null; // localStorage removed
+            
+            // Check if this is an edit mode
+            const urlParams = new URLSearchParams(window.location.search);
+            const isEditMode = urlParams.get('edit') === 'true';
+            
+            if (isEditMode) {
+                // Update page title and button text for edit mode
+                document.title = 'Edit Profile - Vedam Open Source Club';
+                const submitBtn = document.getElementById('submitBtn');
+                if (submitBtn) {
+                    submitBtn.textContent = 'Update Profile';
+                }
+                
+                // Update progress bar
+                const progressBar = document.querySelector('.progress-bar');
+                if (progressBar) {
+                    progressBar.style.width = '100%';
+                }
+            }
+            
+            // Load existing profile data if available
+            
+            loadExistingProfile();
+        });
+
+        function loadExistingProfile() {
+            
+            // localStorage removed: do not prefill
+        }
+
+
+
+        document.getElementById('profileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            
+            try {
+                // Clear previous errors
+                clearErrors();
+                
+                // Get form data with null safety
+                const formData = new FormData(this);
+                const profileData = {
+                    firstName: (formData.get('firstName') || '').trim(),
+                    middleName: (formData.get('middleName') || '').trim(),
+                    lastName: (formData.get('lastName') || '').trim(),
+                    phoneNumber: (formData.get('phoneNumber') || '').trim(),
+                    whatsappNumber: (formData.get('whatsappNumber') || '').trim(),
+                    personalEmail: (formData.get('personalEmail') || '').trim(),
+                    githubConnected: false,
+                    completedAt: new Date().toISOString()
+                };
+                
+                // Validate required fields
+                if (!validateForm(profileData)) {
+                    return;
+                }
+                
+                // Show loading state
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.classList.add('loading');
+                submitBtn.disabled = true;
+                
+                // Save profile data to localStorage
+                // localStorage removed
+                
+                // Try to save to Firestore, but don't block on failure
+                try {
+                    await saveProfileToFirestore(profileData);
+                } catch (firestoreError) {
+                    
+                    // Show error but continue UI flow
+                }
+                
+                // Check if this is edit mode
+                const urlParams = new URLSearchParams(window.location.search);
+                const isEditMode = urlParams.get('edit') === 'true';
+                
+                if (isEditMode) {
+                    showSuccess('Profile updated successfully! Redirecting to dashboard...');
+                    
+                    setTimeout(() => {
+                        
+                        window.location.href = 'dashboard.html';
+                    }, 2000);
+                } else {
+                    showSuccess('Profile saved successfully! Continue to connect GitHub...');
+                    window.location.href = 'github-connect.html';
+                }
+                
+            } catch (error) {
+                
+                showGlobalError('Error saving profile. Please try again.');
+                
+                // Reset button state
+                const submitBtn = document.getElementById('submitBtn');
+                if (submitBtn) {
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                }
+            }
+        });
+
+        function validateForm(data) {
+            let isValid = true;
+            
+            // Validate first name
+            if (!data.firstName) {
+                showFieldError('firstName', 'First name is required');
+                isValid = false;
+            }
+            
+            // Validate last name
+            if (!data.lastName) {
+                showFieldError('lastName', 'Last name is required');
+                isValid = false;
+            }
+            
+            // Validate phone number
+            if (!data.phoneNumber) {
+                showFieldError('phoneNumber', 'Phone number is required');
+                isValid = false;
+            } else if (!/^[0-9+\-\s()]+$/.test(data.phoneNumber)) {
+                showFieldError('phoneNumber', 'Please enter a valid phone number');
+                isValid = false;
+            }
+            
+            // Validate WhatsApp number
+            if (!data.whatsappNumber) {
+                showFieldError('whatsappNumber', 'WhatsApp number is required');
+                isValid = false;
+            } else if (!/^[0-9+\-\s()]+$/.test(data.whatsappNumber)) {
+                showFieldError('whatsappNumber', 'Please enter a valid WhatsApp number');
+                isValid = false;
+            }
+            
+            // Validate personal email
+            if (!data.personalEmail) {
+                showFieldError('personalEmail', 'Personal email is required');
+                isValid = false;
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.personalEmail)) {
+                showFieldError('personalEmail', 'Please enter a valid email address');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+
+        function showFieldError(fieldName, message) {
+            const field = document.getElementById(fieldName);
+            const errorDiv = document.getElementById(fieldName + 'Error');
+            
+            field.classList.add('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.form-group input').forEach(input => {
+                input.classList.remove('error');
+            });
+            
+            document.querySelectorAll('.error-message').forEach(error => {
+                error.style.display = 'none';
+            });
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.querySelector('span').textContent = message;
+            successDiv.style.display = 'block';
+        }
+
+        function showGlobalError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.querySelector('span').textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        async function saveProfileToFirestore(profileData) {
+            try {
+                const authUser = (window.auth && window.auth.currentUser) || null;
+                if (!authUser || !authUser.uid) {
+                    throw new Error('User not authenticated');
+                }
+                
+                const memberData = {
+                    // Basic user info
+                    uid: authUser.uid,
+                    displayName: authUser.displayName,
+                    email: authUser.email,
+                    photoURL: authUser.photoURL,
+                    
+                    // Profile data
+                    firstName: profileData.firstName,
+                    middleName: profileData.middleName,
+                    lastName: profileData.lastName,
+                    phoneNumber: profileData.phoneNumber,
+                    whatsappNumber: profileData.whatsappNumber,
+                    personalEmail: profileData.personalEmail,
+                    
+                    // GitHub data (not connected yet)
+                    githubConnected: false,
+                    
+                    // Timestamps
+                    joinedAt: new Date().toISOString(),
+                    lastUpdated: new Date().toISOString(),
+                    profileCompletedAt: new Date().toISOString()
+                };
+                
+                // Save to Firestore Members collection
+                await window.setDoc(window.doc(window.db, 'Members', authUser.uid), memberData, { merge: true });
+                
+                
+            } catch (error) {
+                
+                
+                // Provide more specific error messages
+                if (error.code === 'permission-denied') {
+                    
+                } else if (error.code === 'unauthenticated') {
+                    
+                } else {
+                    
+                }
+                
+                throw error;
+            }
+        }
+
+        function goBack() {
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

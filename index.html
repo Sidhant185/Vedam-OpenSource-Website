@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vedam Open Source Club</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <div class="logo-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-main">Vedam Open Source</span>
+                    <span class="logo-sub">Club</span>
+                </div>
+            </div>
+            <div class="nav-menu">
+                <a href="#home" class="nav-link active">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+                <a href="#about" class="nav-link">
+                    <i class="fas fa-info-circle"></i>
+                    <span>About</span>
+                </a>
+                <a href="#features" class="nav-link">
+                    <i class="fas fa-star"></i>
+                    <span>Features</span>
+                </a>
+                <a href="login.html" class="nav-link profile-link">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Sign In</span>
+                </a>
+            </div>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="floating-elements">
+            <div class="floating-element element-1"></div>
+            <div class="floating-element element-2"></div>
+            <div class="floating-element element-3"></div>
+            <div class="floating-element element-4"></div>
+        </div>
+        <div class="hero-container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <i class="fas fa-star"></i>
+                    <span id="hero-badge-text">Join <span id="hero-member-count">Loading...</span> Developers</span>
+                </div>
+                <h1 class="hero-title">
+                    Welcome to Vedam Open Source Club
+                </h1>
+                <p class="hero-description">
+                    Empowering students to contribute to open source projects, learn cutting-edge technologies, 
+                    and build a community of passionate developers at Vedam School of Technology.
+                </p>
+                <div class="hero-buttons">
+                    <a href="#about" class="btn btn-primary">
+                        <i class="fas fa-rocket"></i>
+                        Learn More
+                    </a>
+                    <a href="login.html" class="btn btn-secondary">
+                        <i class="fas fa-user-plus"></i>
+                        Join Us
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="hero-members">
+                            <div class="loading-spinner-small"></div>
+                        </span>
+                        <span class="stat-label">Members</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="hero-projects">
+                            <div class="loading-spinner-small"></div>
+                        </span>
+                        <span class="stat-label">Projects</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="hero-stars">
+                            <div class="loading-spinner-small"></div>
+                        </span>
+                        <span class="stat-label">GitHub Stars</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="code-animation">
+                    <div class="code-header">
+                        <div class="code-dots">
+                            <span class="dot red"></span>
+                            <span class="dot yellow"></span>
+                            <span class="dot green"></span>
+                        </div>
+                        <span class="code-title">open-source.js</span>
+                    </div>
+                    <div class="code-content">
+                        <div class="code-line">
+                            <span class="code-keyword">const</span> 
+                            <span class="code-variable">openSource</span> 
+                            <span class="code-operator">=</span> 
+                            <span class="code-string">"collaboration"</span>
+                        </div>
+                        <div class="code-line">
+                            <span class="code-keyword">function</span> 
+                            <span class="code-function">buildFuture</span>
+                            <span class="code-bracket">()</span> 
+                            <span class="code-bracket">{</span>
+                        </div>
+                        <div class="code-line indent">
+                            <span class="code-keyword">return</span> 
+                            <span class="code-variable">openSource</span>
+                        </div>
+                        <div class="code-line">
+                            <span class="code-bracket">}</span>
+                        </div>
+                        <div class="code-line">
+                            <span class="code-comment">// Join us and make a difference!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about">
+        <div class="container">
+            <div class="section-header">
+                <h2>About Our Club</h2>
+                <p>Building the future through open source collaboration</p>
+            </div>
+            <div class="about-grid">
+                <div class="about-card">
+                    <div class="card-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>Community</h3>
+                    <p>Join a vibrant community of developers, designers, and tech enthusiasts working together on meaningful projects.</p>
+                </div>
+                <div class="about-card">
+                    <div class="card-icon">
+                        <i class="fas fa-code-branch"></i>
+                    </div>
+                    <h3>Collaboration</h3>
+                    <p>Learn to work with others on real-world projects, contributing to open source software that impacts millions.</p>
+                </div>
+                <div class="about-card">
+                    <div class="card-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <h3>Innovation</h3>
+                    <p>Explore cutting-edge technologies and build innovative solutions that solve real-world problems.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Why Join Our Club?</h2>
+                <p>Discover the amazing benefits of being part of our open source community</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h3>Learn & Grow</h3>
+                    <p>Master new technologies through hands-on projects and mentorship from experienced developers.</p>
+                    <div class="feature-highlight">Free Learning Resources</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <h3>Build Network</h3>
+                    <p>Connect with like-minded developers, industry professionals, and potential collaborators.</p>
+                    <div class="feature-highlight">500+ Active Members</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <h3>Showcase Skills</h3>
+                    <p>Build an impressive portfolio with real-world projects that demonstrate your capabilities.</p>
+                    <div class="feature-highlight">Portfolio Building</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-handshake"></i>
+                    </div>
+                    <h3>Career Opportunities</h3>
+                    <p>Get access to internships, job opportunities, and career guidance from industry experts.</p>
+                    <div class="feature-highlight">Industry Connections</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="container">
+            <div class="stats-header">
+                <h2>Our Impact in Numbers</h2>
+                <p>Real achievements from our amazing community</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" data-stat="members">
+                            <div class="loading-spinner"></div>
+                        </div>
+                        <div class="stat-label">Active Members</div>
+                        <div class="stat-description">Growing community of developers</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-code-branch"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" data-stat="projects">
+                            <div class="loading-spinner"></div>
+                        </div>
+                        <div class="stat-label">Open Projects</div>
+                        <div class="stat-description">Active repositories & contributions</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" data-stat="stars">
+                            <div class="loading-spinner"></div>
+                        </div>
+                        <div class="stat-label">GitHub Stars</div>
+                        <div class="stat-description">Community recognition & support</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" data-stat="events">
+                            <div class="loading-spinner"></div>
+                        </div>
+                        <div class="stat-label">Events This Year</div>
+                        <div class="stat-description">Workshops, hackathons & meetups</div>
+                    </div>
+                </div>
+            </div>
+            <div class="stats-cta">
+                <p>Join our growing community and be part of these amazing numbers!</p>
+                <a href="login.html" class="btn btn-glow">
+                    <i class="fas fa-rocket"></i>
+                    Join Now
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <i class="fas fa-code"></i>
+                    <span>Vedam Open Source</span>
+                </div>
+                <div class="footer-links">
+                    <a href="#home">Home</a>
+                    <a href="#about">About</a>
+                    <a href="login.html">Sign In</a>
+                </div>
+                <div class="footer-social">
+                    <a href="#"><i class="fab fa-github"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-discord"></i></a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Vedam Open Source Club. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

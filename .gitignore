@@ -1,0 +1,39 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Env/Secrets (do not create these in frontend; kept for safety)
+.env
+.env.*
+*.env
+*.env.*
+.env.local
+.env.production
+.env.development
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependencies
+node_modules/
+
+# Build outputs
+.dist/
+dist/
+build/
+.out/
+.next/
+.vercel/
+.netlify/
+
+# IDE/editor
+.vscode/
+.idea/
+*.swp
+
+# Misc
+*.local
+**/*.local
+

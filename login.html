@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In - Vedam Open Source Club</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+
+    <!-- Firebase SDK -->
+    <script type="module">
+      // Import the functions you need from the SDKs you need
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+      import {
+        getAuth,
+        signInWithPopup,
+        signInWithRedirect,
+        getRedirectResult,
+        GoogleAuthProvider,
+        GithubAuthProvider,
+        onAuthStateChanged,
+        setPersistence,
+        browserLocalPersistence,
+        indexedDBLocalPersistence,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        getDoc,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyBO0PAmNKXjTJGH1aRsEc2vJJnR1Y-Tum8",
+        authDomain: "vedamopensource007.firebaseapp.com",
+        projectId: "vedamopensource007",
+        storageBucket: "vedamopensource007.firebasestorage.app",
+        messagingSenderId: "1097939608119",
+        appId: "1:1097939608119:web:90e2923b4c3ed3fd1515b2",
+        measurementId: "G-G8V5WT7S5V",
+      };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+      const googleProvider = new GoogleAuthProvider();
+      // Improve Google UX and hint school domain selection (client-side enforcement still applied)
+      try {
+        googleProvider.setCustomParameters({ prompt: 'select_account', hd: 'vedamsot.org' });
+      } catch (e) {  }
+      const githubProvider = new GithubAuthProvider();
+
+      // Set persistence to indexedDB (more reliable across redirects); fallback to localStorage
+      try {
+        await setPersistence(auth, indexedDBLocalPersistence);
+        
+      } catch (e) {
+        
+        await setPersistence(auth, browserLocalPersistence);
+        
+      }
+
+      // Make auth available globally
+      window.auth = auth;
+      window.db = db;
+      window.googleProvider = googleProvider;
+      window.githubProvider = githubProvider;
+      window.signInWithPopup = signInWithPopup;
+      window.signInWithRedirect = signInWithRedirect;
+      window.getRedirectResult = getRedirectResult;
+      window.onAuthStateChanged = onAuthStateChanged;
+      window.setDoc = setDoc;
+      window.doc = doc;
+      window.getDoc = getDoc;
+    </script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        min-height: 100vh;
+        overflow-x: hidden;
+        position: relative;
+      }
+
+      body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+          radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+          radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+          radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+        z-index: -1;
+        animation: backgroundShift 20s ease-in-out infinite;
+      }
+
+      @keyframes backgroundShift {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.8; }
+      }
+
+      body::after {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+          radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 30%),
+          radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 30%),
+          radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+        z-index: -1;
+        animation: float 15s ease-in-out infinite;
+      }
+
+      @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        33% { transform: translateY(-20px) rotate(1deg); }
+        66% { transform: translateY(10px) rotate(-1deg); }
+      }
+
+      .auth-container {
+        min-height: 100vh;
+        display: flex;
+        background: transparent;
+        position: relative;
+        z-index: 1;
+      }
+
+      .auth-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 1px;
+        height: 100%;
+        background: linear-gradient(180deg, 
+          transparent 0%, 
+          rgba(255, 255, 255, 0.3) 20%, 
+          rgba(255, 255, 255, 0.5) 50%, 
+          rgba(255, 255, 255, 0.3) 80%, 
+          transparent 100%);
+        z-index: 2;
+        transform: translateX(-50%);
+      }
+
+      .auth-left {
+        flex: 1;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 50%, rgba(240, 147, 251, 0.95) 100%);
+        backdrop-filter: blur(20px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 4rem 3rem;
+        position: relative;
+        overflow: hidden;
+        border-radius: 0;
+        margin-right: 0;
+        box-shadow: none;
+        border: none;
+      }
+
+      .auth-left::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>');
+        opacity: 0.3;
+      }
+
+      .auth-content {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+        color: white;
+        max-width: 500px;
+      }
+
+      .auth-logo {
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.25);
+        border-radius: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 2rem;
+        backdrop-filter: blur(15px);
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+      }
+
+      .auth-logo:hover {
+        transform: scale(1.05) rotate(5deg);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+      }
+
+      .auth-logo i {
+        font-size: 2.5rem;
+        color: white;
+      }
+
+      .auth-title {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        line-height: 1.2;
+      }
+
+      .auth-subtitle {
+        font-size: 1.3rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+        line-height: 1.5;
+      }
+
+      .auth-quote {
+        font-size: 1.1rem;
+        font-style: italic;
+        opacity: 0.8;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+      }
+
+      .auth-features {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 3rem;
+      }
+
+      .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.2rem;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 18px;
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .feature-item:hover {
+        transform: translateX(10px);
+        background: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .feature-item i {
+        font-size: 1.2rem;
+        color: #ffd700;
+      }
+
+      .auth-right {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%);
+        backdrop-filter: blur(20px);
+        border-radius: 0;
+        margin-left: 0;
+        position: relative;
+        box-shadow: none;
+        border: none;
+      }
+
+      .auth-right::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, 
+          rgba(102, 126, 234, 0.1) 0%, 
+          rgba(118, 75, 162, 0.05) 20%, 
+          rgba(255, 255, 255, 0.02) 50%, 
+          rgba(255, 255, 255, 0.05) 100%);
+        z-index: -1;
+      }
+
+      .auth-left::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100px;
+        height: 100%;
+        background: linear-gradient(90deg, 
+          transparent 0%, 
+          rgba(255, 255, 255, 0.1) 50%, 
+          rgba(255, 255, 255, 0.2) 100%);
+        z-index: 1;
+      }
+
+      .auth-card {
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(30px);
+        border-radius: 30px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+        width: 100%;
+        max-width: 520px;
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        z-index: 1;
+      }
+
+      .auth-header {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 3rem 2rem;
+        text-align: center;
+        position: relative;
+        border-radius: 25px 25px 0 0;
+      }
+
+      .auth-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100%" height="100%" fill="url(%23dots)"/></svg>');
+        opacity: 0.3;
+      }
+
+      .auth-header-content {
+        position: relative;
+        z-index: 1;
+      }
+
+      .welcome-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        animation: wave 2s ease-in-out infinite;
+      }
+
+      .welcome-icon i {
+        font-size: 1.8rem;
+        color: white;
+      }
+
+      @keyframes wave {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(10deg); }
+        75% { transform: rotate(-10deg); }
+      }
+
+      .auth-header h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+      }
+
+      .auth-header p {
+        opacity: 0.9;
+        font-size: 1.1rem;
+        line-height: 1.5;
+      }
+
+      .auth-form {
+        padding: 3rem 2.5rem;
+        position: relative;
+        z-index: 1;
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #333;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+        font-family: inherit;
+      }
+
+      .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .form-group input.error {
+        border-color: #e53e3e;
+      }
+
+      .error-message {
+        color: #e53e3e;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        display: none;
+      }
+
+      .auth-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .btn-auth {
+        width: 100%;
+        padding: 1rem;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: inherit;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      }
+
+      .btn-secondary {
+        background: transparent;
+        color: #667eea;
+        border: 2px solid #667eea;
+      }
+
+      .btn-secondary:hover {
+        background: #667eea;
+        color: white;
+      }
+
+      .auth-switch {
+        text-align: center;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .auth-switch a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .auth-switch a:hover {
+        text-decoration: underline;
+      }
+
+      .back-home {
+        position: absolute;
+        top: 2rem;
+        left: 2rem;
+        color: white;
+        text-decoration: none;
+        font-size: 1.2rem;
+        transition: all 0.3s ease;
+        width: 50px;
+        height: 50px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+      }
+
+      .back-home:hover {
+        color: #667eea;
+        background: rgba(255, 255, 255, 0.9);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+      }
+
+      .form-toggle {
+        display: none;
+      }
+
+      .form-toggle.active {
+        display: block;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 1rem;
+      }
+
+      .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .login-main {
+        animation: fadeInUp 0.6s ease-out;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .login-intro {
+        text-align: center;
+        margin-bottom: 2.5rem;
+      }
+
+      .login-intro h2 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+      }
+
+      .login-intro p {
+        color: #6b7280;
+        font-size: 1rem;
+      }
+
+      .google-signin-section {
+        margin-bottom: 2rem;
+      }
+
+      .success-message {
+        background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        color: #155724;
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin-bottom: 1.5rem;
+        display: none;
+        border-left: 4px solid #28a745;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.1);
+      }
+
+      .success-message .success-icon {
+        width: 50px;
+        height: 50px;
+        background: #28a745;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+      }
+
+      .success-message .success-icon i {
+        font-size: 1.5rem;
+        color: white;
+      }
+
+      .success-content h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+
+      .error-message-global {
+        background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+        color: #721c24;
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin-bottom: 1.5rem;
+        display: none;
+        border-left: 4px solid #dc3545;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.1);
+      }
+
+      .error-message-global .error-icon {
+        width: 50px;
+        height: 50px;
+        background: #dc3545;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+      }
+
+      .error-message-global .error-icon i {
+        font-size: 1.5rem;
+        color: white;
+      }
+
+      .error-content h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+
+      .google-auth-container {
+        text-align: center;
+        margin: 2rem 0;
+      }
+
+      .google-logo {
+        margin-bottom: 1rem;
+      }
+
+      .btn-google {
+        width: 100%;
+        padding: 1.5rem 2rem;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 20px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 1.5rem;
+        font-family: inherit;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        text-align: left;
+      }
+
+      .btn-google:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        transform: translateY(-4px);
+      }
+
+      .google-icon {
+        width: 40px;
+        height: 40px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+      }
+
+      .btn-google:hover .google-icon {
+        background: #e9ecef;
+        transform: scale(1.05);
+      }
+
+      .btn-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+      }
+
+      .btn-text {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1f2937;
+      }
+
+      .btn-subtitle {
+        font-size: 0.85rem;
+        color: #6b7280;
+        font-weight: 500;
+      }
+
+      .btn-google:active {
+        transform: translateY(0);
+      }
+
+      .btn-google .loading {
+        display: none;
+      }
+
+      .btn-google.loading .btn-text {
+        display: none;
+      }
+
+      .btn-google.loading .loading {
+        display: block;
+      }
+
+      .auth-info {
+        margin-top: 2rem;
+        text-align: center;
+      }
+
+      .info-text {
+        color: #666;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      .info-text i {
+        color: #4caf50;
+      }
+
+      .domain-info {
+        color: #ff6b35;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding: 0.8rem;
+        background: #fff3e0;
+        border-radius: 8px;
+        border-left: 4px solid #ff6b35;
+      }
+
+      .domain-info i {
+        color: #ff6b35;
+      }
+
+      .divider {
+        position: relative;
+        text-align: center;
+        margin: 2rem 0;
+      }
+
+      .divider::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
+      }
+
+      .divider span {
+        background: white;
+        padding: 0 1.5rem;
+        color: #6b7280;
+        font-size: 0.9rem;
+        font-weight: 500;
+        position: relative;
+        z-index: 1;
+      }
+
+      .security-features {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 2rem;
+      }
+
+      .security-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1.2rem;
+        background: #f8fafc;
+        border-radius: 15px;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+      }
+
+      .security-item:hover {
+        background: #f1f5f9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      }
+
+      .security-icon {
+        width: 45px;
+        height: 45px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .security-icon i {
+        font-size: 1.2rem;
+        color: white;
+      }
+
+      .security-content h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 0.3rem;
+      }
+
+      .security-content p {
+        font-size: 0.85rem;
+        color: #6b7280;
+        line-height: 1.4;
+        margin: 0;
+      }
+
+      .loading-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+        border-radius: 15px;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
+      }
+
+      .loading-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .loading-text h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+        color: #0369a1;
+      }
+
+      .loading-text p {
+        font-size: 0.9rem;
+        color: #0284c7;
+        margin: 0;
+      }
+
+      .loading-indicator .spinner {
+        width: 20px;
+        height: 20px;
+        border-width: 2px;
+      }
+
+      /* Mobile Responsive Styles */
+      @media (max-width: 768px) {
+        .auth-container {
+          flex-direction: column;
+        }
+
+        .auth-left {
+          flex: none;
+          min-height: 40vh;
+          padding: 2rem 1.5rem;
+          border-radius: 0 0 30px 30px;
+          margin-right: 0;
+          margin-bottom: 20px;
+        }
+
+        .auth-title {
+          font-size: 2rem;
+        }
+
+        .auth-subtitle {
+          font-size: 1.1rem;
+        }
+
+        .auth-quote {
+          font-size: 1rem;
+        }
+
+        .auth-features {
+          display: none; /* Hide features on mobile to save space */
+        }
+
+        .auth-right {
+          flex: none;
+          padding: 1rem;
+          border-radius: 0;
+          margin-left: 0;
+          box-shadow: none;
+        }
+
+        .auth-container::before {
+          display: none;
+        }
+
+        .auth-card {
+          max-width: 100%;
+          margin: 0;
+        }
+
+        .auth-header {
+          padding: 2rem 1.5rem;
+        }
+
+        .auth-header h1 {
+          font-size: 1.5rem;
+        }
+
+        .auth-form {
+          padding: 2rem 1.5rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .auth-left {
+          min-height: 35vh;
+          padding: 1.5rem 1rem;
+          border-radius: 0;
+          margin-right: 0;
+          margin-bottom: 0;
+        }
+
+        .auth-title {
+          font-size: 1.8rem;
+        }
+
+        .auth-subtitle {
+          font-size: 1rem;
+        }
+
+        .auth-right {
+          padding: 0.5rem;
+        }
+
+        .auth-header {
+          padding: 1.5rem 1rem;
+        }
+
+        .auth-form {
+          padding: 1.5rem 1rem;
+        }
+
+        .btn-google {
+          padding: 1rem 1.5rem;
+          gap: 1rem;
+        }
+
+        .welcome-icon {
+          width: 50px;
+          height: 50px;
+          margin-bottom: 1rem;
+        }
+
+        .welcome-icon i {
+          font-size: 1.5rem;
+        }
+
+        .auth-header h1 {
+          font-size: 1.8rem;
+        }
+
+        .auth-header p {
+          font-size: 0.9rem;
+        }
+
+        .login-intro h2 {
+          font-size: 1.5rem;
+        }
+
+        .google-icon {
+          width: 35px;
+          height: 35px;
+        }
+
+        .btn-text {
+          font-size: 1rem;
+        }
+
+        .btn-subtitle {
+          font-size: 0.8rem;
+        }
+
+        .security-item {
+          padding: 1rem;
+          gap: 0.8rem;
+        }
+
+        .security-icon {
+          width: 40px;
+          height: 40px;
+        }
+
+        .security-content h4 {
+          font-size: 0.9rem;
+        }
+
+        .security-content p {
+          font-size: 0.8rem;
+        }
+
+        .loading-indicator {
+          padding: 1.5rem;
+        }
+
+        .loading-text h3 {
+          font-size: 1rem;
+        }
+
+        .loading-text p {
+          font-size: 0.85rem;
+        }
+
+        .back-home {
+          top: 1rem;
+          left: 1rem;
+          width: 45px;
+          height: 45px;
+          font-size: 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="auth-container">
+      <!-- Left Side - Inspirational Content -->
+      <div class="auth-left">
+        <a href="index.html" class="back-home">
+          <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="auth-content">
+          <div class="auth-logo">
+            <i class="fas fa-code"></i>
+          </div>
+          <h1 class="auth-title">Welcome to the Future</h1>
+          <p class="auth-subtitle">Join Vedam Open Source Club and be part of something extraordinary</p>
+          <p class="auth-quote">"The best way to predict the future is to create it. Join us in building tomorrow's technology today."</p>
+          
+          <div class="auth-features">
+            <div class="feature-item">
+              <i class="fas fa-users"></i>
+              <span>Join <span id="login-member-count">Loading...</span> passionate developers</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-rocket"></i>
+              <span>Work on cutting-edge projects</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-graduation-cap"></i>
+              <span>Learn from industry experts</span>
+            </div>
+            <div class="feature-item">
+              <i class="fas fa-trophy"></i>
+              <span>Build your portfolio</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Side - Login Form -->
+      <div class="auth-right">
+        <div class="auth-card">
+          <!-- Header with animated elements -->
+          <div class="auth-header">
+            <div class="auth-header-content">
+              <div class="welcome-icon">
+                <i class="fas fa-hand-wave"></i>
+              </div>
+              <h1>Welcome Back!</h1>
+              <p>Sign in to continue your journey with Vedam Open Source Club</p>
+            </div>
+          </div>
+
+          <div class="auth-form">
+            <!-- Success Message -->
+            <div id="successMessage" class="success-message">
+              <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <div class="success-content">
+                <h3>Login Successful!</h3>
+                <p>Redirecting you to your dashboard...</p>
+              </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="error-message-global">
+              <div class="error-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+              </div>
+              <div class="error-content">
+                <h3>Authentication Failed</h3>
+                <p>Please try again or contact support if the issue persists.</p>
+              </div>
+            </div>
+
+            <!-- Main Login Section -->
+            <div class="login-main">
+              <div class="login-intro">
+                <h2>Ready to Code?</h2>
+                <p>Join thousands of developers building the future</p>
+              </div>
+
+              <!-- Google Sign In Button -->
+              <div class="google-signin-section">
+                <button id="googleSignIn" class="btn-google">
+                  <div class="google-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                  </div>
+                  <div class="btn-content">
+                    <span class="btn-text">Continue with Google</span>
+                    <span class="btn-subtitle">Sign in with your Vedam account</span>
+                  </div>
+                  <div class="loading">
+                    <div class="spinner"></div>
+                  </div>
+                </button>
+              </div>
+
+              <!-- Divider -->
+              <div class="divider">
+                <span>Secure & Trusted</span>
+              </div>
+
+              <!-- Security Features -->
+              <div class="security-features">
+                <div class="security-item">
+                  <div class="security-icon">
+                    <i class="fas fa-shield-check"></i>
+                  </div>
+                  <div class="security-content">
+                    <h4>Secure Authentication</h4>
+                    <p>Your data is protected with enterprise-grade security</p>
+                  </div>
+                </div>
+                
+                <div class="security-item">
+                  <div class="security-icon">
+                    <i class="fas fa-university"></i>
+                  </div>
+                  <div class="security-content">
+                    <h4>Vedam Students Only</h4>
+                    <p>Exclusive access for @vedamsot.org email addresses</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+              <div class="loading-content">
+                <div class="spinner"></div>
+                <div class="loading-text">
+                  <h3>Initializing Authentication</h3>
+                  <p>Setting up your secure connection...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Include shared script for common functions -->
+    <script src="script.js"></script>
+    
+    <script>
+      // Environment detection function
+      function isLocalhost() {
+        const hostname = window.location.hostname;
+        return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0';
+      }
+
+      // Detect if running on Netlify or production domain
+      function isProduction() {
+        const hostname = window.location.hostname;
+        return hostname.includes('netlify.app') || 
+               hostname.includes('vedamopensource.com') || 
+               hostname.includes('vercel.app') ||
+               (!isLocalhost() && hostname !== 'localhost' && hostname !== '127.0.0.1');
+      }
+
+      // Wait for Firebase to be available
+      document.addEventListener("DOMContentLoaded", function () {
+        
+        // Show loading indicator
+        const loadingIndicator = document.getElementById("loadingIndicator");
+        loadingIndicator.style.display = "flex";
+        
+        // Load real member count for login page
+        loadLoginMemberCount();
+        
+        // Wait for Firebase modules to load completely
+        waitForFirebase();
+      });
+
+      // Load real member count for login page
+      async function loadLoginMemberCount() {
+        try {
+          // Wait for Firebase to be available
+          if (window.fetchClubStats) {
+            const stats = await window.fetchClubStats();
+            const memberCountElement = document.getElementById('login-member-count');
+            if (memberCountElement && stats.members) {
+              memberCountElement.textContent = `${stats.members}+`;
+            }
+          } else {
+            // Fallback: try to get from shared script
+            setTimeout(() => {
+              if (window.fetchClubStats) {
+                window.fetchClubStats().then(stats => {
+                  const memberCountElement = document.getElementById('login-member-count');
+                  if (memberCountElement && stats.members) {
+                    memberCountElement.textContent = `${stats.members}+`;
+                  }
+                });
+              }
+            }, 2000);
+          }
+        } catch (error) {
+          
+          const memberCountElement = document.getElementById('login-member-count');
+          if (memberCountElement) {
+            memberCountElement.textContent = '500+';
+          }
+        }
+      }
+
+      // Function to wait for Firebase to be properly initialized
+      function waitForFirebase() {
+        
+        let attempts = 0;
+        const maxAttempts = 30; // 15 seconds max wait time for Netlify
+        
+        const checkFirebase = () => {
+          attempts++;
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          if (window.auth && window.googleProvider && window.signInWithPopup && window.getRedirectResult) {
+            
+            
+            
+            
+            initializeAuth();
+          } else if (attempts >= maxAttempts) {
+            
+            
+            
+            
+            
+            
+            const loadingIndicator = document.getElementById("loadingIndicator");
+            if (loadingIndicator) {
+              loadingIndicator.style.display = "none";
+            }
+            showGlobalError('Authentication service failed to load. Please refresh the page and try again.');
+          } else {
+            
+            setTimeout(checkFirebase, 500);
+          }
+        };
+        checkFirebase();
+      }
+
+      function initializeAuth() {
+        
+        const googleSignInBtn = document.getElementById("googleSignIn");
+        const loadingIndicator = document.getElementById("loadingIndicator");
+
+        
+        
+
+        // Hide loading indicator
+        if (loadingIndicator) {
+          loadingIndicator.style.display = "none";
+          
+        }
+
+        if (!window.auth || !window.googleProvider) {
+          
+          
+          
+          showGlobalError(
+            "Authentication service not available. Please refresh the page."
+          );
+          return;
+        }
+
+        
+
+        // Check if user is already signed in
+        
+        
+        // Add a small delay to ensure Firebase is fully ready
+        setTimeout(() => {
+          window.onAuthStateChanged(window.auth, (user) => {
+            
+            
+            
+            if (user) {
+              // Check email domain for already signed in users
+              if (!user.email || !/^[^@]+@vedamsot\.org$/i.test(user.email)) {
+                
+                // Sign out the user immediately if email doesn't match
+                window.auth.signOut();
+                showGlobalError(
+                  "Access denied. Only @vedamsot.org email addresses are allowed."
+                );
+                return;
+              }
+
+              
+              // User is signed in with valid email
+              
+              showSuccess(`Verifying your account, ${user.displayName}...`);
+
+              // Skip localStorage persistence per request
+              setTimeout(() => {
+                
+                checkUserProfile(user);
+              }, 2000);
+            } else {
+              
+            }
+          });
+        }, 1000);
+
+        // Also check current user immediately (for cases where onAuthStateChanged doesn't fire)
+        
+        const currentUser = window.auth.currentUser;
+        
+        
+        if (currentUser) {
+          // Check email domain
+          if (currentUser.email && /^[^@]+@vedamsot\.org$/i.test(currentUser.email)) {
+            
+            showSuccess(`Verifying your account, ${currentUser.displayName}...`);
+
+            setTimeout(() => {
+              
+              checkUserProfile(currentUser);
+            }, 2000);
+          } else {
+            
+            // Sign out invalid user
+            window.auth.signOut();
+            showGlobalError(
+              "Access denied. Only @vedamsot.org email addresses are allowed."
+            );
+          }
+        } else {
+            
+            
+        }
+
+        // Always check for redirect result (covers Netlify/custom domains)
+        setTimeout(() => {
+          const hasFlag = sessionStorage.getItem('loginRedirect') === '1';
+          handleRedirectResult().catch(e => {});
+          
+          // Small retry if we initiated redirect
+          if (hasFlag) {
+            setTimeout(() => {
+              handleRedirectResult().catch(e => {});
+            }, 1000);
+          }
+        }, 500);
+
+        // Google Sign In button click handler
+        
+        googleSignInBtn.addEventListener("click", async function () {
+          
+          try {
+            // Show loading state
+            
+            this.classList.add("loading");
+            this.disabled = true;
+            
+            // Hide any previous error messages
+            const errorDiv = document.getElementById("errorMessage");
+            errorDiv.style.display = "none";
+            
+
+            let result;
+            
+            // Try popup first on all environments; fallback to redirect if blocked
+            try {
+              
+              
+              
+              result = await window.signInWithPopup(
+                window.auth,
+                window.googleProvider
+              );
+              
+            } catch (popupError) {
+              
+              try {
+                sessionStorage.setItem('loginRedirect', '1');
+                await window.signInWithRedirect(
+                  window.auth,
+                  window.googleProvider
+                );
+                
+                return; // redirect away
+              } catch (redirectError) {
+                
+                throw redirectError;
+              }
+            }
+
+            const user = result.user;
+            
+            
+            
+            // Wait a moment for auth state to update
+            setTimeout(async () => {
+              
+              await handleSuccessfulAuth(user, this);
+            }, 500);
+
+          } catch (error) {
+            // Handle different error types
+            let errorMessage = "Authentication failed. Please try again.";
+
+            if (error.code === "auth/popup-closed-by-user") {
+              errorMessage = "Sign-in was cancelled. Please try again.";
+            } else if (error.code === "auth/popup-blocked") {
+              errorMessage =
+                "Popup was blocked. Please allow popups and try again.";
+            } else if (error.code === "auth/network-request-failed") {
+              errorMessage =
+                "Network error. Please check your connection and try again.";
+            } else if (error.code === "auth/account-exists-with-different-credential") {
+              errorMessage =
+                "An account already exists with this email. Please use a different sign-in method.";
+            } else if (error.code === "auth/too-many-requests") {
+              errorMessage =
+                "Too many failed attempts. Please try again later.";
+            }
+
+            
+            showGlobalError(errorMessage);
+
+            // Reset button state
+            
+            this.classList.remove("loading");
+            this.disabled = false;
+          }
+        });
+
+        
+      }
+
+      // Handle redirect result for production environment
+      async function handleRedirectResult() {
+        
+        try {
+          const result = await window.getRedirectResult(window.auth);
+          if (result && result.user) {
+            
+            sessionStorage.removeItem('loginRedirect');
+            await handleSuccessfulAuth(result.user, null);
+            return true;
+          } else {
+            
+            return false;
+          }
+        } catch (error) {
+          
+          return false;
+        }
+      }
+
+      // Handle successful authentication for both popup and redirect flows
+      async function handleSuccessfulAuth(user, buttonElement) {
+        
+        
+        
+        
+        // Check email domain restriction
+        
+        if (!user.email || !/^[^@]+@vedamsot\.org$/i.test(user.email)) {
+          
+          // Sign out the user immediately if email doesn't match
+          await window.auth.signOut();
+          showGlobalError(
+            "Access denied. Only @vedamsot.org email addresses are allowed."
+          );
+
+          // Reset button state if button element is provided (popup flow)
+          if (buttonElement) {
+            buttonElement.classList.remove("loading");
+            buttonElement.disabled = false;
+          }
+          return;
+        }
+
+        
+        // Success - email domain is valid
+        showSuccess(`Verifying your account, ${user.displayName}...`);
+
+        // Skip localStorage persistence per request
+
+        // Immediately check if we can proceed with profile check
+        
+        const immediateCheck = () => {
+          const currentUser = window.auth.currentUser;
+          
+          
+          if (currentUser && currentUser.uid === user.uid) {
+            
+            checkUserProfile(user);
+            return true;
+          }
+          return false;
+        };
+
+        // Try immediate check first
+        if (!immediateCheck()) {
+          // If immediate check fails, wait and try again
+          
+          setTimeout(() => {
+            
+            
+            // Double-check that user is still authenticated
+            const currentUser = window.auth.currentUser;
+            
+            
+            if (currentUser && currentUser.uid === user.uid) {
+              
+              checkUserProfile(user);
+            } else {
+              
+              // Try to get fresh user data
+              window.auth.onAuthStateChanged((freshUser) => {
+                if (freshUser && freshUser.uid === user.uid) {
+                  
+                  checkUserProfile(user);
+                } else {
+                  
+                  showGlobalError("Authentication failed. Please try again.");
+                }
+              });
+            }
+          }, 2000);
+        }
+      }
+
+      function showGlobalError(message) {
+        const errorDiv = document.getElementById("errorMessage");
+        if (errorDiv) {
+          const errorContent = errorDiv.querySelector(".error-content p");
+          if (errorContent) {
+            errorContent.textContent = message;
+          }
+          errorDiv.style.display = "block";
+          
+          // Hide success message if it's showing
+          const successDiv = document.getElementById("successMessage");
+          if (successDiv) {
+            successDiv.style.display = "none";
+          }
+          
+          setTimeout(() => {
+            errorDiv.style.display = "none";
+          }, 5000);
+        }
+      }
+
+      function showSuccess(message) {
+        const successDiv = document.getElementById("successMessage");
+        if (successDiv) {
+          const successContent = successDiv.querySelector(".success-content p");
+          if (successContent) {
+            successContent.textContent = message;
+          }
+          successDiv.style.display = "block";
+          
+          // Hide error message if it's showing
+          const errorDiv = document.getElementById("errorMessage");
+          if (errorDiv) {
+            errorDiv.style.display = "none";
+          }
+        }
+      }
+
+
+      // Use the shared checkUserProfileAndRedirect function from script.js
+      async function checkUserProfile(userData) {
+        try {
+          
+          
+          
+          // Wait for the function to be available
+          if (window.checkUserProfileAndRedirect) {
+            
+            await window.checkUserProfileAndRedirect(userData);
+          } else {
+            
+            showGlobalError("Profile check function not available. Please refresh the page and try again.");
+          }
+        } catch (error) {
+          
+          showGlobalError("Could not verify your profile. Please refresh the page and try again.");
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,2948 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - Vedam Open Source Club</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="script.js" defer></script>
+
+    <script>
+      // Try shared Firebase init early (non-blocking, non-breaking)
+      (function(){
+        if (window.App && window.App.firebase && typeof window.App.firebase.init === 'function') {
+          window.App.firebase.init().catch(function(){});
+        }
+      })();
+    </script>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+      // Import the functions you need from the SDKs you need
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+      import {
+        getAuth,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        getDoc,
+        setDoc,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      import {
+        getDatabase,
+        ref,
+        push,
+        onValue,
+        off,
+        serverTimestamp,
+        set,
+        onDisconnect,
+        get,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyBO0PAmNKXjTJGH1aRsEc2vJJnR1Y-Tum8",
+        authDomain: "vedamopensource007.firebaseapp.com",
+        projectId: "vedamopensource007",
+        storageBucket: "vedamopensource007.firebasestorage.app",
+        messagingSenderId: "1097939608119",
+        appId: "1:1097939608119:web:90e2923b4c3ed3fd1515b2",
+        measurementId: "G-G8V5WT7S5V",
+      };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+      const realtimeDb = getDatabase(app);
+
+      // Make Firebase services available globally
+      window.auth = auth;
+      window.db = db;
+      window.realtimeDb = realtimeDb;
+      window.getDoc = getDoc;
+      window.doc = doc;
+      window.setDoc = setDoc;
+      window.ref = ref;
+      window.push = push;
+      window.onValue = onValue;
+      window.off = off;
+      window.serverTimestamp = serverTimestamp;
+      window.set = set;
+      window.onDisconnect = onDisconnect;
+      window.get = get;
+    </script>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background: #f8fafc;
+        overflow-x: hidden;
+      }
+
+      .dashboard-container {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* Sidebar Navigation */
+      .sidebar {
+        width: 280px;
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        position: fixed;
+        height: 100vh;
+        left: 0;
+        top: 0;
+        z-index: 1000;
+        transition: all 0.3s ease;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .sidebar-header {
+        padding: 2rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
+
+      .sidebar-logo i {
+        font-size: 2rem;
+      }
+
+      .sidebar-nav {
+        padding: 1rem 0;
+      }
+
+      .nav-item {
+        display: block;
+        padding: 1rem 1.5rem;
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-left: 3px solid transparent;
+        position: relative;
+      }
+
+      .nav-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border-left-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .nav-item.active {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        border-left-color: #ffd700;
+      }
+
+      .nav-item i {
+        width: 20px;
+        margin-right: 0.8rem;
+        text-align: center;
+      }
+
+      .nav-item span {
+        font-weight: 500;
+      }
+
+      .sidebar-footer {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .user-profile-sidebar {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .user-avatar-sidebar {
+        display: none;
+      }
+
+      .user-info-sidebar h4 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+      }
+
+      .user-info-sidebar p {
+        font-size: 0.8rem;
+        opacity: 0.8;
+      }
+
+      .logout-btn-sidebar {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 0.8rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      .logout-btn-sidebar:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.4);
+      }
+
+      /* Main Content Area */
+      .main-content {
+        flex: 1;
+        margin-left: 280px;
+        min-height: 100vh;
+        transition: all 0.3s ease;
+      }
+
+      .main-header {
+        background: white;
+        padding: 1.5rem 2rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .main-header h1 {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+      }
+
+      .main-header p {
+        color: #666;
+        font-size: 1rem;
+      }
+
+      .content-area {
+        padding: 2rem;
+      }
+
+      .content-section {
+        display: none;
+        animation: fadeIn 0.3s ease-in-out;
+      }
+
+      .content-section.active {
+        display: block;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Dashboard Cards */
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+      }
+
+      .dashboard-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+      }
+
+      .dashboard-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        border-radius: 15px 15px 0 0;
+      }
+
+      .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .card-icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+      }
+
+      .card-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+        flex: 1;
+        text-align: center;
+      }
+
+      .card-content {
+        color: #666;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+      }
+
+      .card-actions {
+        display: flex;
+        gap: 1rem;
+      }
+
+      .btn {
+        padding: 0.8rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+      }
+
+      .btn-secondary {
+        background: transparent;
+        color: #667eea;
+        border: 2px solid #667eea;
+      }
+
+      .btn-secondary:hover {
+        background: #667eea;
+        color: white;
+      }
+
+      /* Stats Grid */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        text-align: center;
+        transition: transform 0.3s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-3px);
+      }
+
+      .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+      }
+
+      .stat-label {
+        color: #666;
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+
+      /* Mobile Responsive */
+      .mobile-menu-btn {
+        display: none;
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        z-index: 1001;
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 0.8rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.2rem;
+      }
+
+      .github-activity-section {
+        margin-top: 3rem;
+        padding: 2rem;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 1.5rem;
+        text-align: center;
+      }
+
+      .activity-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .activity-stat {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        text-align: center;
+        transition: transform 0.3s ease;
+      }
+
+      .activity-stat:hover {
+        transform: translateY(-5px);
+      }
+
+      .activity-stat .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: white;
+      }
+
+      .activity-stat .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        color: white;
+      }
+
+      .top-repos {
+        grid-column: 1 / -1;
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-top: 1rem;
+      }
+
+      .top-repos h3 {
+        margin-bottom: 1rem;
+        color: #333;
+      }
+
+      .repo-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .repo-item:last-child {
+        border-bottom: none;
+      }
+
+      .repo-name {
+        font-weight: 500;
+        color: #667eea;
+      }
+
+      .repo-stats {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.9rem;
+        color: #666;
+      }
+
+      .github-stats-preview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+      }
+
+      .stat-preview {
+        text-align: center;
+        padding: 0.5rem;
+      }
+
+      .stat-preview .number {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #667eea;
+      }
+
+      .stat-preview .label {
+        font-size: 0.8rem;
+        color: #666;
+        margin-top: 0.2rem;
+      }
+
+      .language-badge {
+        background: #667eea;
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        margin-left: 0.5rem;
+      }
+
+      .language-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .language-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.3rem 0.5rem;
+        background: #e2e8f0;
+        border-radius: 4px;
+        font-size: 0.8rem;
+      }
+
+      .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 2rem;
+      }
+
+      .quick-action {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .quick-action:hover {
+        border-color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+      }
+
+      .quick-action i {
+        font-size: 2rem;
+        color: #667eea;
+        margin-bottom: 1rem;
+      }
+
+      .quick-action h4 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #333;
+      }
+
+      .quick-action p {
+        color: #666;
+        font-size: 0.9rem;
+        margin: 0;
+      }
+
+      /* Professional Chat Container */
+      .chat-container {
+        display: flex;
+        flex-direction: column;
+        height: 85vh;
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+        position: relative;
+        backdrop-filter: blur(10px);
+      }
+
+      /* Chat Header */
+      .chat-header {
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        border-bottom: 1px solid #e5e7eb;
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      }
+
+      .chat-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #111827;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .chat-header h3 i {
+        color: #6366f1;
+      }
+
+      .online-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: #6b7280;
+        background: #f9fafb;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+      }
+
+      .online-dot {
+        width: 8px;
+        height: 8px;
+        background: #10b981;
+        border-radius: 50%;
+      }
+
+      .online-users-list {
+        display: flex;
+        gap: 0.5rem;
+        max-width: 200px;
+        overflow-x: auto;
+        padding: 0.25rem;
+      }
+
+      .online-user {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        background: rgba(16, 185, 129, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        color: #059669;
+        white-space: nowrap;
+      }
+
+      .online-user-avatar {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #10b981;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.625rem;
+        font-weight: 600;
+      }
+
+      .chat-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .search-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .search-input {
+        padding: 0.5rem 2rem 0.5rem 1rem;
+        border: 1px solid #d1d5db;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        outline: none;
+        transition: all 0.2s ease;
+        background: #f9fafb;
+        width: 200px;
+      }
+
+      .search-input:focus {
+        border-color: #6366f1;
+        background: white;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+      }
+
+      .search-icon {
+        position: absolute;
+        right: 0.75rem;
+        color: #6b7280;
+        font-size: 0.875rem;
+      }
+
+      /* Instagram-like Messages Area */
+      .chat-messages {
+        flex: 1;
+        padding: 1.5rem;
+        padding-bottom: 2rem;
+        overflow-y: auto;
+        background: linear-gradient(135deg, #fafafa 0%, #f8fafc 100%);
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        min-height: 0;
+        max-height: calc(85vh - 160px);
+        /* Instagram-like smooth scrolling */
+        scroll-behavior: smooth;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+      }
+
+      .chat-messages::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .chat-messages::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+      }
+
+      .chat-messages::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+        transition: background 0.2s;
+      }
+
+      .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+
+      /* Message Styles */
+      .message {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        max-width: 80%;
+      }
+
+      .message.own {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+      }
+
+      .message-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #6366f1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+      }
+
+      .message-content {
+        background: white;
+        padding: 1.25rem 1.5rem;
+        border-radius: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e5e7eb;
+        max-width: 100%;
+        position: relative;
+        backdrop-filter: blur(10px);
+      }
+
+      .message.own .message-content {
+        background: #6366f1;
+        color: white;
+        border-color: #6366f1;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+      }
+
+      .message-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .message-sender {
+        font-weight: 600;
+        font-size: 0.875rem;
+      }
+
+      .message-time {
+        font-size: 0.75rem;
+        opacity: 0.7;
+      }
+
+      .message-text {
+        font-size: 1rem;
+        line-height: 1.5;
+        word-wrap: break-word;
+      }
+
+      .message-reactions {
+        display: flex;
+        gap: 0.25rem;
+        margin-top: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .reaction-btn {
+        background: rgba(99, 102, 241, 0.1);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        border-radius: 12px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .reaction-btn:hover {
+        background: rgba(99, 102, 241, 0.2);
+      }
+
+      .reaction-btn.active {
+        background: #6366f1;
+        color: white;
+      }
+
+      /* Input Area */
+      .chat-input-container {
+        padding: 1.25rem 1.5rem;
+        background: white;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-shrink: 0;
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+      }
+
+      .chat-input {
+        flex: 1;
+        padding: 1rem 1.25rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 1rem;
+        outline: none;
+        transition: all 0.2s ease;
+        background: #f9fafb;
+      }
+
+      .chat-input:focus {
+        border-color: #6366f1;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      }
+
+      .send-button {
+        background: #6366f1;
+        color: white;
+        border: none;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+      }
+
+      .send-button:hover {
+        background: #4f46e5;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+      }
+
+      .send-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+      }
+
+      /* Welcome Message */
+      .welcome-message {
+        text-align: center;
+        padding: 2rem;
+        color: #6b7280;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+      }
+
+      .welcome-message h4 {
+        margin-bottom: 0.5rem;
+        color: #111827;
+        font-size: 1.125rem;
+        font-weight: 600;
+      }
+
+      .welcome-message p {
+        font-size: 0.875rem;
+      }
+
+      /* Instagram-like New Messages Indicator */
+      .new-messages-indicator {
+        position: absolute;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        padding: 0.75rem 1.25rem;
+        border-radius: 30px;
+        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        z-index: 20;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        opacity: 0;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .new-messages-indicator.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+        animation: slideUpBounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      }
+
+      @keyframes slideUpBounce {
+        0% {
+          transform: translateX(-50%) translateY(20px);
+          opacity: 0;
+        }
+        50% {
+          transform: translateX(-50%) translateY(-5px);
+        }
+        100% {
+          transform: translateX(-50%) translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .new-messages-content {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+      }
+
+      .new-messages-content i {
+        animation: bounce 1s infinite;
+      }
+
+      @keyframes bounce {
+        0%,
+        20%,
+        50%,
+        80%,
+        100% {
+          transform: translateY(0);
+        }
+        40% {
+          transform: translateY(-3px);
+        }
+        60% {
+          transform: translateY(-2px);
+        }
+      }
+
+      .scroll-to-bottom-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        padding: 0.5rem;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+      }
+
+      .scroll-to-bottom-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+      }
+
+      /* Emoji Picker Styles */
+      .emoji-picker-btn {
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        color: #6b7280;
+        padding: 0.75rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+      }
+
+      .emoji-picker-btn:hover {
+        background: #e5e7eb;
+        color: #374151;
+      }
+
+      .file-upload-btn {
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        color: #6b7280;
+        padding: 0.75rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+      }
+
+      .file-upload-btn:hover {
+        background: #e5e7eb;
+        color: #374151;
+      }
+
+      .emoji-picker {
+        position: absolute;
+        bottom: 80px;
+        left: 1.5rem;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        padding: 1rem;
+        z-index: 30;
+        animation: slideUp 0.3s ease-out;
+      }
+
+      .emoji-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+      }
+
+      .emoji-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        padding: 0.5rem;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: background-color 0.2s;
+      }
+
+      .emoji-btn:hover {
+        background: #f3f4f6;
+      }
+
+      /* Community Stats - Enhanced */
+      .community-stats {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 15px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-size: 0.95rem;
+        color: #64748b;
+        font-weight: 500;
+        padding: 0.5rem 0;
+      }
+
+      .stat-item i {
+        color: #667eea;
+        font-size: 1.1rem;
+        background: rgba(102, 126, 234, 0.1);
+        padding: 0.5rem;
+        border-radius: 10px;
+      }
+
+      .stat-item span {
+        font-weight: 700;
+        color: #334155;
+        font-size: 1rem;
+      }
+
+      /* Chat Header Improvements - Enhanced */
+      .chat-header .btn {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+      }
+
+      .chat-header .btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+      }
+
+      .chat-header .btn i {
+        margin-right: 0.4rem;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .sidebar {
+          transform: translateX(-100%);
+        }
+
+        .sidebar.open {
+          transform: translateX(0);
+        }
+
+        .main-content {
+          margin-left: 0;
+        }
+
+        .mobile-menu-btn {
+          display: block;
+        }
+
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+
+        .content-area {
+          padding: 1rem;
+        }
+
+        .main-header {
+          padding: 1rem;
+        }
+
+        .main-header h1 {
+          font-size: 1.5rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .card-actions {
+          flex-direction: column;
+        }
+
+        .btn {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <!-- Mobile Menu Button -->
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <!-- Sidebar Navigation -->
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-logo">
+            <i class="fas fa-code"></i>
+            <span>Vedam Club</span>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <a href="dashboard.html" class="nav-item active" aria-current="page">
+            <i class="fas fa-home"></i>
+            <span>Overview</span>
+          </a>
+          <a href="github.html" class="nav-item">
+            <i class="fab fa-github"></i>
+            <span>GitHub Activity</span>
+          </a>
+          <a href="projects.html" class="nav-item">
+            <i class="fas fa-project-diagram"></i>
+            <span>Projects</span>
+          </a>
+          <a href="community.html" class="nav-item">
+            <i class="fas fa-users"></i>
+            <span>Community</span>
+          </a>
+          <a href="events.html" class="nav-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Events</span>
+          </a>
+          <a href="resources.html" class="nav-item">
+            <i class="fas fa-book"></i>
+            <span>Resources</span>
+          </a>
+          <a href="achievements.html" class="nav-item">
+            <i class="fas fa-trophy"></i>
+            <span>Achievements</span>
+          </a>
+          <a href="settings.html" class="nav-item">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="user-profile-sidebar">
+            <div class="user-avatar-sidebar" id="userAvatarSidebar">
+              <i class="fas fa-user"></i>
+            </div>
+            <div class="user-info-sidebar">
+              <h4 id="userNameSidebar">User Name</h4>
+              <p id="userEmailSidebar">user@vedamsot.org</p>
+            </div>
+          </div>
+          <a href="#" class="logout-btn-sidebar" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i>
+            Logout
+          </a>
+        </div>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+        <div class="main-header">
+          <h1 id="mainTitle">Dashboard Overview</h1>
+          <p id="mainSubtitle">
+            Welcome back! Here's what's happening with your account.
+          </p>
+        </div>
+
+        <div class="content-area">
+          <!-- Overview Section -->
+          <div class="content-section active" id="overview-section">
+            <div class="stats-grid" id="overviewStats">
+              <!-- Overview stats will be populated here -->
+            </div>
+
+            <div class="dashboard-grid">
+              <div class="dashboard-card">
+                <div class="card-header">
+                  <div class="card-icon">
+                    <i class="fas fa-chart-line"></i>
+                  </div>
+                  <h3 class="card-title">Quick Stats</h3>
+                </div>
+                <div class="card-content">
+                  <p>
+                    Get a quick overview of your GitHub activity and club
+                    participation.
+                  </p>
+                </div>
+                <div class="card-actions">
+                  <a href="github.html" class="btn btn-primary">
+                    <i class="fas fa-chart-bar"></i>
+                    View Details
+                  </a>
+                </div>
+              </div>
+
+              <div class="dashboard-card">
+                <div class="card-header">
+                  <div class="card-icon">
+                    <i class="fas fa-project-diagram"></i>
+                  </div>
+                  <h3 class="card-title">Recent Projects</h3>
+                </div>
+                <div class="card-content">
+                  <p>
+                    Explore ongoing club projects and contribute to open source
+                    initiatives.
+                  </p>
+                </div>
+                <div class="card-actions">
+                  <a href="projects.html" class="btn btn-primary">
+                    <i class="fas fa-external-link-alt"></i>
+                    View Projects
+                  </a>
+                </div>
+              </div>
+
+              <div class="dashboard-card">
+                <div class="card-header">
+                  <div class="card-icon">
+                    <i class="fas fa-users"></i>
+                  </div>
+                  <h3 class="card-title">Community</h3>
+                </div>
+                <div class="card-content">
+                  <p>
+                    Connect with other club members and participate in
+                    discussions.
+                  </p>
+                </div>
+                <div class="card-actions">
+                  <a href="community.html" class="btn btn-primary">
+                    <i class="fas fa-comments"></i>
+                    Join Community
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Check if user is logged in and has complete profile with GitHub
+      document.addEventListener("DOMContentLoaded", async function () {
+        // Initialize navigation  
+        // Wait for Firebase to initialize
+        setTimeout(async () => {
+          await validateUserAccess();
+        }, 1000);
+      });
+
+      async function validateUserAccess() {
+        // Simplified: don't block dashboard. Load data if available.
+        try {
+          loadUserData();
+          loadGitHubActivity();
+          
+          // Show default overview stats if no GitHub data
+          setTimeout(() => {
+            const overviewStats = document.getElementById("overviewStats");
+            if (overviewStats && !overviewStats.innerHTML.trim()) {
+              updateOverviewStats({});
+            }
+          }, 2000);
+        } catch (e) {
+          // Error handling
+        }
+      }
+
+      async function loadUserData() {
+        const user = window.auth && window.auth.currentUser;
+
+        if (user) {
+          // User is authenticated, load their data from Firestore
+          try {
+            const memberDoc = await window.getDoc(
+              window.doc(window.db, "Members", user.uid)
+            );
+            if (memberDoc.exists()) {
+              const memberData = memberDoc.data();
+              
+
+              // Store user data globally for chat
+              window.currentUserData = {
+                uid: user.uid,
+                displayName:
+                  memberData.name ||
+                  memberData.displayName ||
+                  user.displayName ||
+                  "User",
+                email: memberData.email || user.email || "",
+                photoURL: memberData.photoURL || user.photoURL || null,
+              };
+
+              // Update welcome message
+              document.getElementById(
+                "mainTitle"
+              ).textContent = `Welcome back, ${window.currentUserData.displayName}!`;
+              document.getElementById("userNameSidebar").textContent =
+                window.currentUserData.displayName;
+              document.getElementById("userEmailSidebar").textContent =
+                window.currentUserData.email;
+
+              // Update avatar if available
+              if (window.currentUserData.photoURL) {
+                const avatar = document.getElementById("userAvatarSidebar");
+                avatar.innerHTML = `<img src="${window.currentUserData.photoURL}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+              }
+
+              
+            } else {
+              
+              // Fallback to auth user data
+              window.currentUserData = {
+                uid: user.uid,
+                displayName: user.displayName || "User",
+                email: user.email || "",
+                photoURL: user.photoURL || null,
+              };
+
+              document.getElementById(
+                "mainTitle"
+              ).textContent = `Welcome back, ${window.currentUserData.displayName}!`;
+              document.getElementById("userNameSidebar").textContent =
+                window.currentUserData.displayName;
+              document.getElementById("userEmailSidebar").textContent =
+                window.currentUserData.email;
+            }
+          } catch (error) {
+            
+            // Fallback to auth user data
+            window.currentUserData = {
+              uid: user.uid,
+              displayName: user.displayName || "User",
+              email: user.email || "",
+              photoURL: user.photoURL || null,
+            };
+          }
+        } else {
+          
+          // Try to get from localStorage as fallback
+          try {
+            const storedUser = JSON.parse(
+              localStorage.getItem("user") || "null"
+            );
+            if (storedUser && storedUser.uid) {
+              const memberDoc = await window.getDoc(
+                window.doc(window.db, "Members", storedUser.uid)
+              );
+              if (memberDoc.exists()) {
+                const memberData = memberDoc.data();
+                window.currentUserData = {
+                  uid: storedUser.uid,
+                  displayName:
+                    memberData.name || memberData.displayName || "User",
+                  email: memberData.email || "",
+                  photoURL: memberData.photoURL || null,
+                };
+
+                document.getElementById(
+                  "mainTitle"
+                ).textContent = `Welcome back, ${window.currentUserData.displayName}!`;
+                document.getElementById("userNameSidebar").textContent =
+                  window.currentUserData.displayName;
+                document.getElementById("userEmailSidebar").textContent =
+                  window.currentUserData.email;
+              }
+            }
+          } catch (error) {
+            
+          }
+        }
+      }
+
+      // Navigation functionality
+      function showSection(sectionName) {
+        // Hide all content sections
+        const sections = document.querySelectorAll(".content-section");
+        sections.forEach((section) => {
+          section.classList.remove("active");
+        });
+
+        // Show selected section
+        const targetSection = document.getElementById(`${sectionName}-section`);
+        if (targetSection) {
+          targetSection.classList.add("active");
+        }
+
+        // Update navigation active state
+        const navItems = document.querySelectorAll(".nav-item");
+        navItems.forEach((item) => {
+          item.classList.remove("active");
+        });
+
+        const activeNavItem = document.querySelector(
+          `[data-section="${sectionName}"]`
+        );
+        if (activeNavItem) {
+          activeNavItem.classList.add("active");
+        }
+
+        // Update main header
+        updateMainHeader(sectionName);
+
+        // Close mobile sidebar if open
+        const sidebar = document.getElementById("sidebar");
+        if (sidebar.classList.contains("open")) {
+          sidebar.classList.remove("open");
+        }
+      }
+
+      function updateMainHeader(sectionName) {
+        const titles = {
+          overview: {
+            title: "Dashboard Overview",
+            subtitle:
+              "Welcome back! Here's what's happening with your account.",
+          },
+          github: {
+            title: "GitHub Activity",
+            subtitle:
+              "Track your coding contributions and repository activity.",
+          },
+          projects: {
+            title: "Club Projects",
+            subtitle:
+              "Explore ongoing projects and contribute to open source initiatives.",
+          },
+          community: {
+            title: "Community",
+            subtitle:
+              "Connect with fellow developers and participate in discussions.",
+          },
+          events: {
+            title: "Events",
+            subtitle: "Check out upcoming club meetings and workshops.",
+          },
+          resources: {
+            title: "Learning Resources",
+            subtitle:
+              "Access tutorials, documentation, and learning materials.",
+          },
+          achievements: {
+            title: "Achievements",
+            subtitle: "Track your progress and milestones in the club.",
+          },
+          settings: {
+            title: "Settings",
+            subtitle: "Manage your account preferences and profile settings.",
+          },
+        };
+
+        const header = titles[sectionName] || titles["overview"];
+        document.getElementById("mainTitle").textContent = header.title;
+        document.getElementById("mainSubtitle").textContent = header.subtitle;
+      }
+
+      function toggleSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        sidebar.classList.toggle("open");
+      }
+
+      // Initialize navigation
+      function initializeNavigation() {
+        const navItems = document.querySelectorAll(".nav-item");
+        navItems.forEach((item) => {
+          item.addEventListener("click", function (e) {
+            e.preventDefault();
+            const section = this.getAttribute("data-section");
+            showSection(section);
+          });
+        });
+      }
+
+      async function loadGitHubActivity() {
+        
+        try {
+          const user = window.auth && window.auth.currentUser;
+          if (!user || !user.uid) return;
+
+          // Try to get activity data from Firestore
+          const memberDoc = await window.getDoc(
+            window.doc(window.db, "Members", user.uid)
+          );
+
+          if (memberDoc.exists()) {
+            const memberData = memberDoc.data();
+            const githubActivity = memberData.githubActivity;
+
+            if (githubActivity) {
+              
+              
+              displayGitHubActivity(githubActivity);
+              return;
+            }
+          }
+
+          // No localStorage fallback anymore
+        } catch (error) {
+          
+        }
+      }
+
+      function displayGitHubActivity(activity) {
+        
+        
+        
+
+        const activitySection = document.getElementById(
+          "githubActivitySection"
+        );
+        const activityGrid = document.getElementById("activityGrid");
+        const trackGitHubCard = document.getElementById("trackGitHubCard");
+        const githubStatsPreview =
+          document.getElementById("githubStatsPreview");
+
+        if (!activitySection || !activityGrid) return;
+
+        // Show the activity section and track card
+        activitySection.style.display = "block";
+        if (trackGitHubCard) {
+          trackGitHubCard.style.display = "block";
+        }
+
+        // Update overview stats
+        updateOverviewStats(activity);
+
+        // Update the track GitHub card preview
+        if (githubStatsPreview) {
+          githubStatsPreview.innerHTML = `
+                    <div class="stat-preview">
+                        <div class="number">${
+                          activity.reposContributed || 0
+                        }</div>
+                        <div class="label">Repos</div>
+                    </div>
+                    <div class="stat-preview">
+                        <div class="number">${activity.commits || 0}</div>
+                        <div class="label">Commits</div>
+                    </div>
+                    <div class="stat-preview">
+                        <div class="number">${activity.totalStars || 0}</div>
+                        <div class="label">Stars</div>
+                    </div>
+                    <div class="stat-preview">
+                        <div class="number">${activity.pullRequests || 0}</div>
+                        <div class="label">PRs</div>
+                    </div>
+                `;
+        }
+
+        // Create activity stats
+        const stats = [
+          { number: activity.reposContributed || 0, label: "Repositories" },
+          { number: activity.commits || 0, label: "Commits" },
+          { number: activity.pullRequests || 0, label: "Pull Requests" },
+          { number: activity.issues || 0, label: "Issues" },
+          { number: activity.totalStars || 0, label: "Total Stars" },
+          { number: activity.totalForks || 0, label: "Forks" },
+        ];
+
+        // Clear existing content
+        activityGrid.innerHTML = "";
+
+        // Add stat cards
+        stats.forEach((stat) => {
+          const statCard = document.createElement("div");
+          statCard.className = "activity-stat";
+          statCard.innerHTML = `
+                    <div class="stat-number">${stat.number}</div>
+                    <div class="stat-label">${stat.label}</div>
+                `;
+          activityGrid.appendChild(statCard);
+        });
+
+        // Add top repositories if available
+        if (activity.topRepos && activity.topRepos.length > 0) {
+          const topReposDiv = document.createElement("div");
+          topReposDiv.className = "top-repos";
+          topReposDiv.innerHTML = `
+                    <h3>Top Repositories</h3>
+                    ${activity.topRepos
+                      .map(
+                        (repo) => `
+                        <div class="repo-item">
+                            <div class="repo-name">
+                                <a href="${repo.url}" target="_blank">${
+                          repo.name
+                        }</a>
+                                ${
+                                  repo.language
+                                    ? `<span class="language-badge">${repo.language}</span>`
+                                    : ""
+                                }
+                            </div>
+                            <div class="repo-stats">
+                                <span><i class="fas fa-star"></i> ${
+                                  repo.stars
+                                }</span>
+                                <span><i class="fas fa-code-branch"></i> ${
+                                  repo.forks
+                                }</span>
+                            </div>
+                        </div>
+                    `
+                      )
+                      .join("")}
+                `;
+          activityGrid.appendChild(topReposDiv);
+        }
+
+        // Add language stats if available
+        if (activity.languages && activity.languages.length > 0) {
+          const languagesDiv = document.createElement("div");
+          languagesDiv.className = "top-repos";
+          languagesDiv.innerHTML = `
+                    <h3>Programming Languages</h3>
+                    <div class="language-stats">
+                        ${activity.languages
+                          .map(
+                            (lang) => `
+                            <div class="language-item">
+                                <span class="language-name">${lang.language}</span>
+                                <span class="language-count">${lang.count} repos</span>
+                            </div>
+                        `
+                          )
+                          .join("")}
+                    </div>
+                `;
+          activityGrid.appendChild(languagesDiv);
+        }
+      }
+
+      function updateOverviewStats(activity) {
+        const overviewStats = document.getElementById("overviewStats");
+        if (!overviewStats) return;
+
+        const stats = [
+          {
+            number: activity.reposContributed || 0,
+            label: "Repositories",
+            icon: "fas fa-code-branch",
+          },
+          {
+            number: activity.commits || 0,
+            label: "Commits",
+            icon: "fas fa-code",
+          },
+          {
+            number: activity.pullRequests || 0,
+            label: "Pull Requests",
+            icon: "fas fa-code-branch",
+          },
+          {
+            number: activity.totalStars || 0,
+            label: "Stars",
+            icon: "fas fa-star",
+          },
+        ];
+
+        overviewStats.innerHTML = stats
+          .map(
+            (stat) => `
+                <div class="stat-card">
+                    <div class="stat-number">${stat.number}</div>
+                    <div class="stat-label">
+                        <i class="${stat.icon}"></i>
+                        ${stat.label}
+                    </div>
+                </div>
+            `
+          )
+          .join("");
+      }
+
+      async function refreshGitHubData() {
+        try {
+          const authUser = window.auth && window.auth.currentUser;
+          if (!authUser || !authUser.uid) {
+            alert("Not signed in. Please login again.");
+            return;
+          }
+
+          // Show loading state on the clicked button
+          const refreshBtn = event && event.target;
+          let originalText = "";
+          if (refreshBtn) {
+            originalText = refreshBtn.innerHTML;
+            refreshBtn.innerHTML =
+              '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+            refreshBtn.disabled = true;
+          }
+
+          // Get latest GitHub token from Firestore
+          const memberSnap = await window.getDoc(
+            window.doc(window.db, "Members", authUser.uid)
+          );
+          if (!memberSnap.exists()) {
+            alert("Profile not found. Please complete your profile first.");
+            if (refreshBtn) {
+              refreshBtn.innerHTML = originalText;
+              refreshBtn.disabled = false;
+            }
+            return;
+          }
+          const memberData = memberSnap.data();
+          const accessToken = memberData.githubAccessToken;
+          if (!accessToken) {
+            alert(
+              "GitHub not connected. Please connect your GitHub account first."
+            );
+            if (refreshBtn) {
+              refreshBtn.innerHTML = originalText;
+              refreshBtn.disabled = false;
+            }
+            return;
+          }
+
+          
+          await fetchAndSaveGitHubActivity(authUser.uid, accessToken);
+
+          // Reload activity display from Firestore
+          await loadGitHubActivity();
+
+          if (refreshBtn) {
+            refreshBtn.innerHTML = originalText;
+            refreshBtn.disabled = false;
+          }
+          alert("GitHub data refreshed successfully!");
+        } catch (error) {
+          
+          alert("Failed to refresh GitHub data. Please try again.");
+          const refreshBtn = event && event.target;
+          if (refreshBtn) {
+            refreshBtn.innerHTML =
+              '<i class="fas fa-sync-alt"></i> Refresh Data';
+            refreshBtn.disabled = false;
+          }
+        }
+      }
+
+      function viewDetailedActivity() {
+        // Scroll to the detailed activity section
+        const activitySection = document.getElementById(
+          "githubActivitySection"
+        );
+        if (activitySection) {
+          activitySection.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+
+      // Debug function to check data sources
+      async function debugDataSources() {
+        try {
+          const user = JSON.parse(localStorage.getItem("user"));
+          const profile = JSON.parse(localStorage.getItem("userProfile"));
+
+          
+          
+
+          // Check localStorage
+          if (profile.githubActivity) {
+            
+            
+          } else {
+            
+          }
+
+          // Check Firestore
+          const memberDoc = await window.getDoc(
+            window.doc(window.db, "Members", user.uid)
+          );
+          if (memberDoc.exists()) {
+            const memberData = memberDoc.data();
+            if (memberData.githubActivity) {
+              
+              
+            } else {
+              
+            }
+          } else {
+            
+          }
+        } catch (error) {
+          
+        }
+      }
+
+      // Make debug function available globally
+      window.debugDataSources = debugDataSources;
+
+      async function fetchAndSaveGitHubActivity(userId, accessToken) {
+        try {
+          
+
+          // Fetch user repositories
+          const reposResponse = await fetch(
+            "https://api.github.com/user/repos?per_page=100&sort=updated",
+            {
+              headers: {
+                Authorization: `token ${accessToken}`,
+                Accept: "application/vnd.github.v3+json",
+              },
+            }
+          );
+
+          if (!reposResponse.ok) {
+            throw new Error(`GitHub API error: ${reposResponse.status}`);
+          }
+
+          const repositories = await reposResponse.json();
+
+          // Fetch user events (activity) - use improved approach
+          let events = [];
+          let commits = 0;
+          let pullRequests = 0;
+          let issues = 0;
+
+          try {
+            // First, get the user's login from the GitHub API
+            const userResponse = await fetch("https://api.github.com/user", {
+              headers: {
+                Authorization: `token ${accessToken}`,
+                Accept: "application/vnd.github.v3+json",
+              },
+            });
+
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              const username = userData.login;
+              
+
+              // Try to get events using the username
+              const eventsResponse = await fetch(
+                `https://api.github.com/users/${username}/events?per_page=100`,
+                {
+                  headers: {
+                    Authorization: `token ${accessToken}`,
+                    Accept: "application/vnd.github.v3+json",
+                  },
+                }
+              );
+
+              if (eventsResponse.ok) {
+                events = await eventsResponse.json();
+                
+
+                // Calculate activity metrics from events
+                commits = events.filter(
+                  (event) => event.type === "PushEvent"
+                ).length;
+                pullRequests = events.filter(
+                  (event) => event.type === "PullRequestEvent"
+                ).length;
+                issues = events.filter(
+                  (event) => event.type === "IssuesEvent"
+                ).length;
+
+                // Debug: Log all event types to see what we're getting
+                const eventTypes = events.map((event) => event.type);
+                const uniqueEventTypes = [...new Set(eventTypes)];
+                
+                
+                
+              } else {
+                
+              }
+            } else {
+              
+            }
+          } catch (eventsError) {
+            
+          }
+
+          // Calculate activity metrics with improved data
+          const totalStars = repositories.reduce(
+            (sum, repo) => sum + repo.stargazers_count,
+            0
+          );
+          const totalForks = repositories.reduce(
+            (sum, repo) => sum + repo.forks_count,
+            0
+          );
+
+          const activityData = {
+            reposContributed: repositories.length,
+            publicRepos: repositories.filter((repo) => !repo.private).length,
+            privateRepos: repositories.filter((repo) => repo.private).length,
+            totalStars: totalStars,
+            totalForks: totalForks,
+            commits: commits,
+            pullRequests: pullRequests,
+            issues: issues,
+            contributions: events.length,
+            lastActivity:
+              events.length > 0
+                ? events[0]?.created_at
+                : new Date().toISOString(),
+            languages: getLanguageStats(repositories),
+            topRepos: repositories
+              .sort((a, b) => b.stargazers_count - a.stargazers_count)
+              .slice(0, 5)
+              .map((repo) => ({
+                name: repo.name,
+                stars: repo.stargazers_count,
+                forks: repo.forks_count,
+                language: repo.language,
+                url: repo.html_url,
+              })),
+            activityFetchedAt: new Date().toISOString(),
+          };
+
+          
+
+          // Save activity data to Firestore
+          await window.setDoc(
+            window.doc(window.db, "Members", userId),
+            {
+              githubActivity: activityData,
+              lastActivityUpdate: new Date().toISOString(),
+            },
+            { merge: true }
+          );
+
+          
+        } catch (error) {
+          
+          throw error;
+        }
+      }
+
+      function getLanguageStats(repositories) {
+        const languageCount = {};
+        repositories.forEach((repo) => {
+          if (repo.language) {
+            languageCount[repo.language] =
+              (languageCount[repo.language] || 0) + 1;
+          }
+        });
+
+        const languageStats = Object.entries(languageCount)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 10)
+          .map(([language, count]) => ({ language, count }));
+
+        
+        return languageStats;
+      }
+
+      async function checkAndUpdateGitHubData() {
+        try {
+          const user = JSON.parse(localStorage.getItem("user"));
+          const profile = JSON.parse(localStorage.getItem("userProfile"));
+
+          if (!user || !profile.githubAccessToken || !profile.githubConnected) {
+            return; // No GitHub connection
+          }
+
+          // Check if data is older than 1 hour (3600000 ms)
+          const lastUpdate =
+            profile.lastActivityUpdate || profile.githubConnectedAt;
+          const oneHourAgo = new Date(Date.now() - 3600000);
+          const lastUpdateDate = new Date(lastUpdate);
+
+          if (lastUpdateDate < oneHourAgo) {
+            
+
+            // Update GitHub data in background
+            try {
+              await fetchAndSaveGitHubActivity(
+                user.uid,
+                profile.githubAccessToken
+              );
+
+              // Update local storage
+              const updatedProfile = {
+                ...profile,
+                lastActivityUpdate: new Date().toISOString(),
+              };
+              localStorage.setItem(
+                "userProfile",
+                JSON.stringify(updatedProfile)
+              );
+
+              // Reload activity display
+              await loadGitHubActivity();
+
+              
+            } catch (error) {
+              
+              // Don't show error to user, just log it
+            }
+          }
+        } catch (error) {
+          
+        }
+      }
+
+      function viewGitHubProfile() {
+        alert("GitHub profile view functionality will be implemented here.");
+      }
+
+      async function fixGitHubConnectionStatus() {
+        try {
+          const user = JSON.parse(localStorage.getItem("user"));
+          const profile = JSON.parse(localStorage.getItem("userProfile"));
+
+          if (!user || !profile) return;
+
+          // Check if user has GitHub data but githubConnected is false
+          if (
+            profile.githubAccessToken &&
+            profile.githubUsername &&
+            !profile.githubConnected
+          ) {
+            
+
+            // Update localStorage
+            const updatedProfile = { ...profile, githubConnected: true };
+            localStorage.setItem("userProfile", JSON.stringify(updatedProfile));
+
+            // Update Firestore
+            await window.setDoc(
+              window.doc(window.db, "Members", user.uid),
+              {
+                githubConnected: true,
+                lastUpdated: new Date().toISOString(),
+              },
+              { merge: true }
+            );
+
+            
+          }
+        } catch (error) {
+          
+        }
+      }
+
+      function viewProjects() {
+        alert("Club projects page will be implemented here.");
+      }
+
+      // Chat functionality
+      let chatRef = null;
+      let messagesRef = null;
+      let onlineUsersRef = null;
+      let currentUser = null;
+      let isInChat = false;
+      let messageCount = 0;
+
+      function viewCommunity() {
+        
+        // Don't auto-initialize chat, wait for user to join
+        updateCommunityStats();
+
+        // Set up periodic stats refresh for non-joined users
+        if (!isInChat) {
+          // Refresh stats every 5 seconds
+          const statsInterval = setInterval(() => {
+            if (!isInChat) {
+              updateCommunityStats();
+            } else {
+              clearInterval(statsInterval);
+            }
+          }, 5000);
+        }
+      }
+
+      // Join Discussion Function
+      async function joinDiscussion() {
+        try {
+          
+
+          // Get user data
+          if (!currentUser) {
+            if (window.currentUserData) {
+              currentUser = window.currentUserData;
+            } else {
+              alert("Please login to join the discussion.");
+              return;
+            }
+          }
+
+          // Initialize chat
+          await initializeChat();
+
+          // Show chat interface
+          document.getElementById("joinDiscussionCard").style.display = "none";
+          document.getElementById("chatContainer").style.display = "block";
+
+          // Mark user as online
+          await markUserOnline();
+
+          // Load existing messages
+          await loadExistingMessages();
+
+          isInChat = true;
+          
+        } catch (error) {
+          
+          alert("Failed to join discussion. Please try again.");
+        }
+      }
+
+      // Leave Discussion Function
+      function leaveDiscussion() {
+        try {
+          
+
+          // Remove from online users
+          if (onlineUsersRef && currentUser) {
+            const userRef = window.ref(
+              window.realtimeDb,
+              `community-chat/online-users/${currentUser.uid}`
+            );
+            window.set(userRef, null);
+          }
+
+          // Hide chat interface
+          document.getElementById("chatContainer").style.display = "none";
+          document.getElementById("joinDiscussionCard").style.display = "block";
+
+          // Update stats
+          updateCommunityStats();
+
+          isInChat = false;
+          
+        } catch (error) {
+          
+        }
+      }
+
+      async function initializeChat() {
+        try {
+          
+
+          // Initialize Firebase Realtime Database references
+          chatRef = window.ref(window.realtimeDb, "community-chat");
+          messagesRef = window.ref(
+            window.realtimeDb,
+            "community-chat/messages"
+          );
+          onlineUsersRef = window.ref(
+            window.realtimeDb,
+            "community-chat/online-users"
+          );
+
+          // Set up real-time message listener
+          window.onValue(messagesRef, (snapshot) => {
+            const messages = snapshot.val();
+            
+            if (messages) {
+              displayMessages(messages);
+              messageCount = Object.keys(messages).length;
+              updateCommunityStats();
+            }
+          });
+
+          // Set up real-time online users listener
+          window.onValue(onlineUsersRef, (snapshot) => {
+            const onlineUsers = snapshot.val();
+            const onlineCount = onlineUsers
+              ? Object.keys(onlineUsers).length
+              : 0;
+            updateOnlineCount(onlineCount);
+            updateOnlineUsersList(onlineUsers);
+            updateCommunityStats();
+          });
+
+          // Set up input event listeners
+          setupChatInputListeners();
+
+          
+        } catch (error) {
+          
+          throw error;
+        }
+      }
+
+      // Update community stats
+      async function updateCommunityStats() {
+        try {
+          // Initialize Firebase references if not already done
+          if (!onlineUsersRef || !messagesRef) {
+            chatRef = window.ref(window.realtimeDb, "community-chat");
+            onlineUsersRef = window.ref(
+              window.realtimeDb,
+              "community-chat/online-users"
+            );
+            messagesRef = window.ref(
+              window.realtimeDb,
+              "community-chat/messages"
+            );
+          }
+
+          // Get online users count
+          if (onlineUsersRef) {
+            const onlineSnapshot = await window.get(onlineUsersRef);
+            const onlineUsers = onlineSnapshot.val();
+            const onlineCount = onlineUsers
+              ? Object.keys(onlineUsers).length
+              : 0;
+            const memberCountElement = document.getElementById(
+              "communityMemberCount"
+            );
+            if (memberCountElement) {
+              memberCountElement.textContent = onlineCount;
+            }
+          }
+
+          // Get message count
+          if (messagesRef) {
+            const messagesSnapshot = await window.get(messagesRef);
+            const messages = messagesSnapshot.val();
+            const messageCount = messages ? Object.keys(messages).length : 0;
+            const totalMessagesElement =
+              document.getElementById("totalMessages");
+            if (totalMessagesElement) {
+              totalMessagesElement.textContent = messageCount;
+            }
+          }
+        } catch (error) {
+          
+          // Set default values if there's an error
+          const memberCountElement = document.getElementById(
+            "communityMemberCount"
+          );
+          const totalMessagesElement = document.getElementById("totalMessages");
+          if (memberCountElement) memberCountElement.textContent = "0";
+          if (totalMessagesElement) totalMessagesElement.textContent = "0";
+        }
+      }
+
+      function setupChatInputListeners() {
+        const messageInput = document.getElementById("messageInput");
+        const chatMessages = document.getElementById("chatMessages");
+
+        if (messageInput) {
+          messageInput.addEventListener("keypress", function (e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              sendMessage();
+            }
+          });
+        }
+
+        // Add Instagram-like scroll listener
+        if (chatMessages) {
+          chatMessages.addEventListener("scroll", handleScrollEvent);
+        }
+
+        // Auto-focus input when user starts typing anywhere in chat
+        document.addEventListener("keydown", function (e) {
+          // Only if user is in chat and not already focused on input
+          if (isInChat && document.activeElement !== messageInput) {
+            // Check if it's a printable character
+            if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+              messageInput.focus();
+            }
+          }
+        });
+      }
+
+      // Simplified chat - no typing indicators
+
+      async function markUserOnline() {
+        try {
+          const userRef = window.ref(
+            window.realtimeDb,
+            `community-chat/online-users/${currentUser.uid}`
+          );
+          await window.set(userRef, {
+            name: currentUser.displayName || "Anonymous",
+            email: currentUser.email,
+            lastSeen: window.serverTimestamp(),
+          });
+
+          // Set up cleanup when user leaves
+          window.onDisconnect(userRef).remove();
+        } catch (error) {
+          
+        }
+      }
+
+      function displayMessages(messages) {
+        const chatMessages = document.getElementById("chatMessages");
+        if (!chatMessages) return;
+
+        // Clear welcome message if it exists
+        const welcomeMessage = chatMessages.querySelector(".welcome-message");
+        if (welcomeMessage) {
+          welcomeMessage.remove();
+        }
+
+        // Convert messages object to array and sort by timestamp
+        const messagesArray = Object.entries(messages)
+          .map(([key, value]) => ({ id: key, ...value }))
+          .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+        // Clear existing messages
+        chatMessages.innerHTML = "";
+
+        // Display each message
+        messagesArray.forEach((message) => {
+          const messageElement = createMessageElement(message);
+          chatMessages.appendChild(messageElement);
+        });
+
+        // Instagram-like auto-scroll for new messages
+        handleAutoScroll();
+      }
+
+      // Instagram-like scroll to bottom function
+      function scrollToBottom() {
+        const chatMessages = document.getElementById("chatMessages");
+        if (chatMessages) {
+          // Smooth scroll to bottom like Instagram
+          chatMessages.scrollTo({
+            top: chatMessages.scrollHeight,
+            behavior: "smooth",
+          });
+
+          // Update state
+          isAtBottom = true;
+          hideNewMessagesIndicator();
+        }
+      }
+
+      // Instagram-like chat scroll state management
+      let isUserScrolling = false;
+      let scrollTimeout = null;
+      let isAtBottom = true;
+      let lastScrollTop = 0;
+
+      // Check if user is at the very bottom (Instagram-like precision)
+      function isAtChatBottom() {
+        const chatMessages = document.getElementById("chatMessages");
+        if (!chatMessages) return true;
+
+        const threshold = 5; // Very small threshold like Instagram
+        const scrollTop = chatMessages.scrollTop;
+        const scrollHeight = chatMessages.scrollHeight;
+        const clientHeight = chatMessages.clientHeight;
+
+        return scrollTop + clientHeight >= scrollHeight - threshold;
+      }
+
+      // Check if user has scrolled up significantly (like Instagram)
+      function hasUserScrolledUp() {
+        const chatMessages = document.getElementById("chatMessages");
+        if (!chatMessages) return false;
+
+        const scrollTop = chatMessages.scrollTop;
+        const scrollHeight = chatMessages.scrollHeight;
+        const clientHeight = chatMessages.clientHeight;
+
+        // If user is more than 100px from bottom, they've scrolled up
+        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+        return distanceFromBottom > 100;
+      }
+
+      // Instagram-like smooth scroll to bottom
+      function smoothScrollToBottom() {
+        const chatMessages = document.getElementById("chatMessages");
+        if (!chatMessages) return;
+
+        // Smooth scroll animation like Instagram
+        chatMessages.scrollTo({
+          top: chatMessages.scrollHeight,
+          behavior: "smooth",
+        });
+      }
+
+      // Instagram-like auto-scroll logic
+      function handleAutoScroll() {
+        if (isAtChatBottom()) {
+          // User is at bottom - auto scroll to new messages
+          smoothScrollToBottom();
+          hideNewMessagesIndicator();
+          isAtBottom = true;
+        } else if (hasUserScrolledUp()) {
+          // User has scrolled up - show new message indicator
+          showNewMessagesIndicator();
+          isAtBottom = false;
+        }
+      }
+
+      // Instagram-like scroll event handler
+      function handleScrollEvent() {
+        isUserScrolling = true;
+        isAtBottom = isAtChatBottom();
+
+        // Clear existing timeout
+        if (scrollTimeout) {
+          clearTimeout(scrollTimeout);
+        }
+
+        // Set timeout to detect when user stops scrolling
+        scrollTimeout = setTimeout(() => {
+          isUserScrolling = false;
+          handleAutoScroll();
+        }, 150);
+
+        // Hide indicator if user scrolls to bottom
+        if (isAtBottom) {
+          hideNewMessagesIndicator();
+        } else {
+          showNewMessagesIndicator();
+        }
+      }
+
+      // Show new messages indicator with Instagram-like animation
+      function showNewMessagesIndicator() {
+        const indicator = document.getElementById("newMessagesIndicator");
+        if (indicator) {
+          indicator.style.display = "flex";
+          indicator.classList.add("show");
+        }
+      }
+
+      // Hide new messages indicator with smooth transition
+      function hideNewMessagesIndicator() {
+        const indicator = document.getElementById("newMessagesIndicator");
+        if (indicator) {
+          indicator.classList.remove("show");
+          setTimeout(() => {
+            indicator.style.display = "none";
+          }, 300);
+        }
+      }
+
+      function createMessageElement(message) {
+        const messageDiv = document.createElement("div");
+        const isOwnMessage = message.userId === currentUser.uid;
+
+        const time = getRelativeTime(message.timestamp);
+
+        messageDiv.className = `message ${isOwnMessage ? "own" : ""}`;
+        messageDiv.innerHTML = `
+                <div class="message-avatar">
+                    ${
+                      message.userName
+                        ? message.userName.charAt(0).toUpperCase()
+                        : "U"
+                    }
+                </div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-sender">${
+                          message.userName || "User"
+                        }</span>
+                        <span class="message-time">${time}</span>
+                    </div>
+                    <div class="message-text">${escapeHtml(message.text)}</div>
+                    <div class="message-reactions" id="reactions-${
+                      message.id || "temp"
+                    }">
+                        <!-- Reactions will be added here -->
+                    </div>
+                </div>
+            `;
+
+        return messageDiv;
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // Get relative time (e.g., "2 minutes ago", "Just now")
+      function getRelativeTime(timestamp) {
+        const now = Date.now();
+        const diff = now - timestamp;
+        const seconds = Math.floor(diff / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+
+        if (seconds < 10) return "Just now";
+        if (seconds < 60) return `${seconds}s ago`;
+        if (minutes < 60) return `${minutes}m ago`;
+        if (hours < 24) return `${hours}h ago`;
+        if (days < 7) return `${days}d ago`;
+
+        return new Date(timestamp).toLocaleDateString();
+      }
+
+      // Emoji Picker Functions
+      function toggleEmojiPicker() {
+        const emojiPicker = document.getElementById("emojiPicker");
+        if (emojiPicker.style.display === "none") {
+          emojiPicker.style.display = "block";
+        } else {
+          emojiPicker.style.display = "none";
+        }
+      }
+
+      function insertEmoji(emoji) {
+        const messageInput = document.getElementById("messageInput");
+        const currentValue = messageInput.value;
+        const cursorPos = messageInput.selectionStart;
+
+        messageInput.value =
+          currentValue.slice(0, cursorPos) +
+          emoji +
+          currentValue.slice(cursorPos);
+        messageInput.focus();
+        messageInput.setSelectionRange(
+          cursorPos + emoji.length,
+          cursorPos + emoji.length
+        );
+
+        // Hide emoji picker after selection
+        document.getElementById("emojiPicker").style.display = "none";
+      }
+
+      // Close emoji picker when clicking outside
+      document.addEventListener("click", function (e) {
+        const emojiPicker = document.getElementById("emojiPicker");
+        const emojiBtn = document.getElementById("emojiPickerBtn");
+
+        if (
+          emojiPicker &&
+          emojiBtn &&
+          !emojiPicker.contains(e.target) &&
+          !emojiBtn.contains(e.target)
+        ) {
+          emojiPicker.style.display = "none";
+        }
+      });
+
+      // Search messages function
+      function searchMessages(query) {
+        const messages = document.querySelectorAll(".message");
+        const searchTerm = query.toLowerCase();
+
+        messages.forEach((message) => {
+          const messageText = message
+            .querySelector(".message-text")
+            .textContent.toLowerCase();
+          const messageSender = message
+            .querySelector(".message-sender")
+            .textContent.toLowerCase();
+
+          if (
+            messageText.includes(searchTerm) ||
+            messageSender.includes(searchTerm)
+          ) {
+            message.style.display = "flex";
+            message.style.backgroundColor = searchTerm ? "#fef3c7" : "";
+          } else {
+            message.style.display = searchTerm ? "none" : "flex";
+          }
+        });
+      }
+
+      // Add reaction to message
+      function addReaction(messageId, emoji) {
+        // This would integrate with Firebase to store reactions
+        
+      }
+
+      // Handle file upload
+      function handleFileUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        // Check file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          alert("File size too large. Maximum size is 10MB.");
+          return;
+        }
+
+        // Add file info to message input
+        const messageInput = document.getElementById("messageInput");
+        const fileName = file.name;
+        const fileSize = (file.size / 1024 / 1024).toFixed(2);
+
+        messageInput.value = `📎 ${fileName} (${fileSize}MB)`;
+        messageInput.focus();
+      }
+
+      async function sendMessage() {
+        if (!isInChat) {
+          alert("Please join the discussion first.");
+          return;
+        }
+
+        const messageInput = document.getElementById("messageInput");
+        const sendButton = document.getElementById("sendButton");
+
+        if (!messageInput || !currentUser || !messagesRef) {
+          
+          return;
+        }
+
+        const messageText = messageInput.value.trim();
+        if (!messageText) return;
+
+        // Disable input while sending
+        messageInput.disabled = true;
+        sendButton.disabled = true;
+        sendButton.innerHTML =
+          '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+        try {
+          const messageData = {
+            text: messageText,
+            userName: currentUser.displayName || "Anonymous",
+            userId: currentUser.uid,
+            userEmail: currentUser.email,
+            timestamp: Date.now(),
+          };
+
+          // Send message to Firebase - this will trigger real-time update for all users
+          await window.push(messagesRef, messageData);
+
+          // Clear input immediately
+          messageInput.value = "";
+          messageInput.disabled = false;
+          sendButton.disabled = false;
+          sendButton.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+
+          // Instagram-like behavior: always scroll to bottom when user sends a message
+          setTimeout(() => {
+            smoothScrollToBottom();
+            isAtBottom = true;
+            hideNewMessagesIndicator();
+          }, 100);
+
+          
+        } catch (error) {
+          
+
+          // Re-enable input
+          messageInput.disabled = false;
+          sendButton.disabled = false;
+          sendButton.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+        }
+      }
+
+      function updateOnlineCount(count) {
+        const onlineCountElement = document.getElementById("onlineCount");
+        if (onlineCountElement) {
+          onlineCountElement.textContent = `${count} online`;
+        }
+      }
+
+      function updateOnlineUsersList(onlineUsers) {
+        const onlineUsersList = document.getElementById("onlineUsersList");
+        if (!onlineUsersList) return;
+
+        onlineUsersList.innerHTML = "";
+
+        if (onlineUsers) {
+          Object.values(onlineUsers).forEach((user) => {
+            const userElement = document.createElement("div");
+            userElement.className = "online-user";
+
+            const avatar = document.createElement("div");
+            avatar.className = "online-user-avatar";
+            avatar.textContent = user.displayName
+              ? user.displayName.charAt(0).toUpperCase()
+              : "U";
+
+            const name = document.createElement("span");
+            name.textContent = user.displayName || "User";
+
+            userElement.appendChild(avatar);
+            userElement.appendChild(name);
+            onlineUsersList.appendChild(userElement);
+          });
+        }
+      }
+
+      // Simplified chat - no typing indicators
+
+      // Function to manually load existing messages
+      async function loadExistingMessages() {
+        try {
+          
+          if (!messagesRef) {
+            
+            return;
+          }
+
+          // Get messages once to load existing ones
+          const snapshot = await window.get(messagesRef);
+          const messages = snapshot.val();
+          
+
+          if (messages) {
+            displayMessages(messages);
+          } else {
+            
+            // Show welcome message
+            const chatMessages = document.getElementById("chatMessages");
+            if (chatMessages) {
+              chatMessages.innerHTML = `
+                            <div class="welcome-message">
+                                <h4>Welcome to Vedam Community Chat! 👋</h4>
+                                <p>Start a conversation with your fellow developers and club members.</p>
+                            </div>
+                        `;
+            }
+          }
+        } catch (error) {
+          
+        }
+      }
+
+      // Debug function to check chat status
+      function debugChatStatus() {
+        // Chat debugging functionality
+      }
+
+      // Function to manually load user data for chat
+      async function loadUserForChat() {
+        try {
+          const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+          if (storedUser && storedUser.uid) {
+            const memberDoc = await window.getDoc(
+              window.doc(window.db, "Members", storedUser.uid)
+            );
+            if (memberDoc.exists()) {
+              const memberData = memberDoc.data();
+              currentUser = {
+                uid: storedUser.uid,
+                displayName:
+                  memberData.name || memberData.displayName || "Anonymous",
+                email: memberData.email || "user@example.com",
+                photoURL: memberData.photoURL || null,
+              };
+              
+              return currentUser;
+            }
+          }
+          return null;
+        } catch (error) {
+          
+          return null;
+        }
+      }
+
+      // Make debug function available globally
+      window.debugChatStatus = debugChatStatus;
+      window.loadUserForChat = loadUserForChat;
+      window.loadExistingMessages = loadExistingMessages;
+
+      // Cleanup when leaving the page
+      window.addEventListener("beforeunload", function () {
+        if (currentUser && isInChat) {
+          try {
+            // Remove from online users
+            if (onlineUsersRef) {
+              const userRef = window.ref(
+                window.realtimeDb,
+                `community-chat/online-users/${currentUser.uid}`
+              );
+              window.set(userRef, null);
+            }
+          } catch (error) {
+            
+          }
+        }
+      });
+
+      function viewEvents() {
+        alert("Events page will be implemented here.");
+      }
+
+      function viewResources() {
+        alert("Learning resources page will be implemented here.");
+      }
+
+      function viewAchievements() {
+        alert("Achievements page will be implemented here.");
+      }
+
+      function viewSettings() {
+        alert("Settings page will be implemented here.");
+      }
+
+      function logout() {
+        if (confirm("Are you sure you want to logout?")) {
+          // Clear user data
+          localStorage.removeItem("user");
+          localStorage.removeItem("userProfile");
+
+          // Redirect to login
+          window.location.href = "login.html";
+        }
+      }
+    </script>
+  </body>
+</html>

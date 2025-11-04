@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resources - Vedam Open Source Club</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <!-- Firebase SDK -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+      import {
+        getAuth,
+        onAuthStateChanged,
+        signOut,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        getDoc,
+        setDoc,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      import {
+        getDatabase,
+        ref,
+        push,
+        onValue,
+        off,
+        serverTimestamp,
+        set,
+        onDisconnect,
+        get,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBO0PAmNKXjTJGH1aRsEc2vJJnR1Y-Tum8",
+        authDomain: "vedamopensource007.firebaseapp.com",
+        projectId: "vedamopensource007",
+        storageBucket: "vedamopensource007.firebasestorage.app",
+        messagingSenderId: "1097939608119",
+        appId: "1:1097939608119:web:90e2923b4c3ed3fd1515b2",
+        measurementId: "G-G8V5WT7S5V",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+      const realtimeDb = getDatabase(app);
+
+      window.auth = auth;
+      window.db = db;
+      window.realtimeDb = realtimeDb;
+      window.getDoc = getDoc;
+      window.doc = doc;
+      window.setDoc = setDoc;
+      window.ref = ref;
+      window.push = push;
+      window.onValue = onValue;
+      window.off = off;
+      window.serverTimestamp = serverTimestamp;
+      window.set = set;
+      window.onDisconnect = onDisconnect;
+      window.get = get;
+      
+      window.logout = function() {
+        signOut(auth).then(() => {
+          window.location.href = 'index.html';
+        }).catch((error) => {
+          console.error('Error signing out:', error);
+          window.location.href = 'index.html';
+        });
+      };
+      
+      window.toggleSidebar = function() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('open');
+      };
+      
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          try {
+            const memberDoc = await getDoc(doc(db, "Members", user.uid));
+            if (memberDoc.exists()) {
+              const memberData = memberDoc.data();
+              
+              window.currentUserData = {
+                uid: user.uid,
+                displayName: memberData.name || memberData.displayName || user.displayName || "User",
+                email: memberData.email || user.email || "",
+                photoURL: memberData.photoURL || user.photoURL || null,
+              };
+              
+              const userNameEl = document.getElementById('userNameSidebar');
+              const userEmailEl = document.getElementById('userEmailSidebar');
+              const userAvatarEl = document.getElementById('userAvatarSidebar');
+              
+              if (userNameEl) userNameEl.textContent = window.currentUserData.displayName;
+              if (userEmailEl) userEmailEl.textContent = window.currentUserData.email;
+              
+              if (userAvatarEl && window.currentUserData.photoURL) {
+                userAvatarEl.innerHTML = `<img src="${window.currentUserData.photoURL}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                userAvatarEl.style.display = 'block';
+                userAvatarEl.style.width = '40px';
+                userAvatarEl.style.height = '40px';
+                userAvatarEl.style.borderRadius = '50%';
+                userAvatarEl.style.overflow = 'hidden';
+              }
+              
+              loadGitHubActivity(user.uid);
+            }
+          } catch (error) {
+            console.error('Error loading user data:', error);
+          }
+        } else {
+          window.location.href = 'login.html';
+        }
+      });
+    </script>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background: #f8fafc;
+        overflow-x: hidden;
+      }
+
+      .dashboard-container {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* Sidebar Navigation */
+      .sidebar {
+        width: 280px;
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        position: fixed;
+        height: 100vh;
+        left: 0;
+        top: 0;
+        z-index: 1000;
+        transition: all 0.3s ease;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .sidebar-header {
+        padding: 2rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
+
+      .sidebar-logo i {
+        font-size: 2rem;
+      }
+
+      .sidebar-nav {
+        padding: 1rem 0;
+      }
+
+      .nav-item {
+        display: block;
+        padding: 1rem 1.5rem;
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-left: 3px solid transparent;
+        position: relative;
+      }
+
+      .nav-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border-left-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .nav-item.active {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        border-left-color: #ffd700;
+      }
+
+      .nav-item i {
+        width: 20px;
+        margin-right: 0.8rem;
+        text-align: center;
+      }
+
+      .nav-item span {
+        font-weight: 500;
+      }
+
+      .sidebar-footer {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .user-profile-sidebar {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .user-avatar-sidebar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #667eea;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        overflow: hidden;
+      }
+
+      .user-info-sidebar h4 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+      }
+
+      .user-info-sidebar p {
+        font-size: 0.8rem;
+        opacity: 0.8;
+      }
+
+      .logout-btn-sidebar {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 0.8rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        cursor: pointer;
+      }
+
+      .logout-btn-sidebar:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.4);
+      }
+
+      /* Main Content Area */
+      .main-content {
+        flex: 1;
+        margin-left: 280px;
+        min-height: 100vh;
+        transition: all 0.3s ease;
+      }
+
+      .main-header {
+        background: white;
+        padding: 1.5rem 2rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .main-header h1 {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+      }
+
+      .main-header p {
+        color: #666;
+        font-size: 1rem;
+      }
+
+      .content-area {
+        padding: 2rem;
+      }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+      }
+
+      .dashboard-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+      }
+
+      .dashboard-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        border-radius: 15px 15px 0 0;
+      }
+
+      .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .card-icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+      }
+
+      .card-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+        flex: 1;
+      }
+
+      .card-content {
+        color: #666;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+      }
+
+      .card-actions {
+        display: flex;
+        gap: 1rem;
+      }
+
+      .btn {
+        padding: 0.8rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+      }
+
+      .activity-stat {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        text-align: center;
+        transition: transform 0.3s ease;
+      }
+
+      .activity-stat:hover {
+        transform: translateY(-5px);
+      }
+
+      .activity-stat .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: white;
+      }
+
+      .activity-stat .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        color: white;
+      }
+
+      .chart-container {
+        background: white;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+      }
+
+      .chart-container canvas {
+        max-height: 400px;
+      }
+
+      @media (max-width: 768px) {
+        .sidebar {
+          transform: translateX(-100%);
+        }
+
+        .sidebar.open {
+          transform: translateX(0);
+        }
+
+        .main-content {
+          margin-left: 0;
+        }
+
+        .mobile-menu-btn {
+          display: block;
+        }
+
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .content-area {
+          padding: 1rem;
+        }
+
+        .main-header {
+          padding: 1rem;
+        }
+
+        .main-header h1 {
+          font-size: 1.5rem;
+        }
+      }
+
+      .mobile-menu-btn {
+        display: none;
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        z-index: 1001;
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 0.8rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.2rem;
+      }
+
+      @media (max-width: 768px) {
+        .mobile-menu-btn {
+          display: block;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <!-- Mobile Menu Button -->
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <!-- Sidebar Navigation -->
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-logo">
+            <i class="fas fa-code"></i>
+            <span>Vedam Club</span>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <a href="dashboard.html" class="nav-item">
+            <i class="fas fa-home"></i>
+            <span>Overview</span>
+          </a>
+          <a href="github.html" class="nav-item active">
+            <i class="fab fa-github"></i>
+            <span>GitHub Activity</span>
+          </a>
+          <a href="projects.html" class="nav-item">
+            <i class="fas fa-project-diagram"></i>
+            <span>Projects</span>
+          </a>
+          <a href="community.html" class="nav-item">
+            <i class="fas fa-users"></i>
+            <span>Community</span>
+          </a>
+          <a href="events.html" class="nav-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Events</span>
+          </a>
+          <a href="resources.html" class="nav-item">
+            <i class="fas fa-book"></i>
+            <span>Resources</span>
+          </a>
+          <a href="achievements.html" class="nav-item">
+            <i class="fas fa-trophy"></i>
+            <span>Achievements</span>
+          </a>
+          <a href="settings.html" class="nav-item">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="user-profile-sidebar">
+            <div class="user-avatar-sidebar" id="userAvatarSidebar">
+              <i class="fas fa-user"></i>
+            </div>
+            <div class="user-info-sidebar">
+              <h4 id="userNameSidebar">User Name</h4>
+              <p id="userEmailSidebar">user@vedamsot.org</p>
+            </div>
+          </div>
+          <a href="#" class="logout-btn-sidebar" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i>
+            Logout
+          </a>
+        </div>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+        <div class="main-header">
+          <h1 id="mainTitle">Resources</h1>
+          <p id="mainSubtitle">Manage your resources and preferences</p>
+        </div>
+
+        <div class="content-area">
+          
+          <div class="dashboard-grid" id="contentGrid">
+            <div class="dashboard-card">
+              <div class="card-header">
+                <div class="card-icon">
+                  <i class="fab fa-youtube"></i>
+                </div>
+                <h3 class="card-title">Video Tutorials</h3>
+              </div>
+              <div class="card-content">
+                <p>Learn from video tutorials covering various programming concepts and frameworks.</p>
+              </div>
+              <div class="card-actions">
+                <a href="#" class="btn btn-primary">
+                  <i class="fas fa-play"></i> Access Videos
+                </a>
+              </div>
+            </div>
+            
+            <div class="dashboard-card">
+              <div class="card-header">
+                <div class="card-icon">
+                  <i class="fas fa-file-alt"></i>
+                </div>
+                <h3 class="card-title">Documentation</h3>
+              </div>
+              <div class="card-content">
+                <p>Comprehensive documentation for projects, APIs, and development guides.</p>
+              </div>
+              <div class="card-actions">
+                <a href="#" class="btn btn-primary">
+                  <i class="fas fa-book"></i> Read Docs
+                </a>
+              </div>
+            </div>
+
+            <div class="dashboard-card">
+              <div class="card-header">
+                <div class="card-icon">
+                  <i class="fas fa-code"></i>
+                </div>
+                <h3 class="card-title">Code Examples</h3>
+              </div>
+              <div class="card-content">
+                <p>Practical code samples and snippets for common programming tasks.</p>
+              </div>
+              <div class="card-actions">
+                <a href="#" class="btn btn-primary">
+                  <i class="fas fa-code"></i> View Examples
+                </a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <script>
+    </script>
+  </body>
+</html>
