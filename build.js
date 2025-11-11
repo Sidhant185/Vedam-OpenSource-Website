@@ -92,10 +92,10 @@ Object.entries(placeholderMap).forEach(([placeholder, envVarName]) => {
   console.log(`   ✓ ${placeholder} → ${envVarName}`);
 });
 
-// Write the built config (this file will be gitignored)
-const builtConfigPath = path.join(__dirname, 'firebase-config.built.js');
-fs.writeFileSync(builtConfigPath, configContent, 'utf8');
-console.log(`✅ Built configuration written to ${builtConfigPath}`);
+// Overwrite the original firebase-config.js file with replaced values
+// This is safe in CI/CD since the original is in git
+fs.writeFileSync(configPath, configContent, 'utf8');
+console.log(`✅ Configuration updated in ${configPath}`);
 
 // Verify placeholders were replaced
 const stillHasPlaceholders = configContent.includes('__FIREBASE_');
