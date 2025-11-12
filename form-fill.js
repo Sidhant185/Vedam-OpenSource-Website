@@ -414,13 +414,11 @@ function renderField(field) {
     
     // Initialize multiselect count if it's a multiselect field
     if (field.type === 'multiselect') {
-        const select = fieldDiv.querySelector('.form-multiselect');
-        if (select) {
-            // Use setTimeout to ensure DOM is ready
-            setTimeout(() => {
-                updateMultiselectCount(select);
-            }, 0);
-        }
+        const fieldId = field.id;
+        // Use setTimeout to ensure DOM is ready
+        setTimeout(() => {
+            updateMultiselectCount(fieldId);
+        }, 0);
     }
     
     return fieldDiv;
@@ -525,11 +523,27 @@ function renderDropdown(field, value) {
 // Render multiselect
 function renderMultiselect(field, value) {
     const selectedValues = Array.isArray(value) ? value : (value ? [value] : []);
-    const options = (field.options || []).map(opt => {
+    const options = (field.options || []).map((opt, index) => {
         const optValue = typeof opt === 'string' ? opt : opt.value;
         const optLabel = typeof opt === 'string' ? opt : opt.label;
-        return `<option value="${optValue}" ${selectedValues.includes(optValue) ? 'selected' : ''}>${optLabel}</option>`;
+        const isSelected = selectedValues.includes(optValue);
+        return `
+            <div class="multiselect-option ${isSelected ? 'selected' : ''}" 
+                 data-value="${optValue}" 
+                 data-field-id="${field.id}"
+                 ${field.readonly ? 'data-readonly="true"' : ''}>
+                <div class="multiselect-option-content">
+                    <div class="multiselect-checkbox">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span class="multiselect-option-label">${optLabel}</span>
+                </div>
+            </div>
+        `;
     }).join('');
+    
+    // Create hidden input to store selected values for form submission
+    const hiddenInputValue = selectedValues.join(',');
     
     return `
         <label for="${field.id}" class="field-label">
@@ -538,19 +552,12 @@ function renderMultiselect(field, value) {
         </label>
         ${field.helpText ? `<p class="field-help">${field.helpText}</p>` : ''}
         <div class="multiselect-wrapper">
-            <select 
-                id="${field.id}" 
-                name="${field.id}"
-                class="form-select form-multiselect"
-                multiple
-                ${field.required ? 'required' : ''}
-                ${field.readonly ? 'disabled' : ''}
-                data-field-id="${field.id}"
-            >
+            <input type="hidden" id="${field.id}" name="${field.id}" value="${hiddenInputValue}" ${field.required ? 'required' : ''}>
+            <div class="multiselect-options-container" data-field-id="${field.id}">
                 ${options}
-            </select>
+            </div>
             <div class="multiselect-selected-count" id="${field.id}_count">
-                <span class="count-text">0 selected</span>
+                <span class="count-text">${selectedValues.length} ${selectedValues.length === 1 ? 'item' : 'items'} selected</span>
             </div>
         </div>
     `;
@@ -759,20 +766,65 @@ function setupConditionalLogicListeners() {
 
 // Multiselect Functions
 function setupMultiselectListeners() {
-    document.querySelectorAll('.form-multiselect').forEach(select => {
-        // Update count on load
-        updateMultiselectCount(select);
+    document.querySelectorAll('.multiselect-options-container').forEach(container => {
+        const fieldId = container.dataset.fieldId;
+        const options = container.querySelectorAll('.multiselect-option');
         
-        // Update count on change
-        select.addEventListener('change', function() {
-            updateMultiselectCount(this);
+        options.forEach(option => {
+            // Skip if readonly
+            if (option.dataset.readonly === 'true') {
+                return;
+            }
+            
+            option.addEventListener('click', function() {
+                toggleMultiselectOption(this, fieldId);
+            });
         });
+        
+        // Update count on load
+        updateMultiselectCount(fieldId);
     });
 }
 
-function updateMultiselectCount(select) {
-    const selectedCount = select.selectedOptions.length;
-    const countElement = document.getElementById(`${select.id}_count`);
+function toggleMultiselectOption(optionElement, fieldId) {
+    const isSelected = optionElement.classList.contains('selected');
+    const value = optionElement.dataset.value;
+    const hiddenInput = document.getElementById(fieldId);
+    
+    if (!hiddenInput) return;
+    
+    // Get current selected values
+    const currentValues = hiddenInput.value ? hiddenInput.value.split(',').filter(v => v) : [];
+    
+    if (isSelected) {
+        // Deselect
+        optionElement.classList.remove('selected');
+        const newValues = currentValues.filter(v => v !== value);
+        hiddenInput.value = newValues.join(',');
+    } else {
+        // Select
+        optionElement.classList.add('selected');
+        if (!currentValues.includes(value)) {
+            currentValues.push(value);
+        }
+        hiddenInput.value = currentValues.join(',');
+    }
+    
+    // Update count
+    updateMultiselectCount(fieldId);
+    
+    // Trigger change event for conditional logic
+    hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function updateMultiselectCount(fieldId) {
+    const hiddenInput = document.getElementById(fieldId);
+    if (!hiddenInput) return;
+    
+    const selectedValues = hiddenInput.value ? hiddenInput.value.split(',').filter(v => v) : [];
+    const selectedCount = selectedValues.length;
+    const countElement = document.getElementById(`${fieldId}_count`);
+    
     if (countElement) {
         const countText = countElement.querySelector('.count-text');
         if (countText) {
@@ -830,6 +882,16 @@ function evaluateConditionalLogic(field) {
 }
 
 function getFieldValue(fieldElement) {
+    // Check for multiselect (custom UI with hidden input)
+    const multiselectContainer = fieldElement.querySelector('.multiselect-options-container');
+    if (multiselectContainer) {
+        const hiddenInput = fieldElement.querySelector('input[type="hidden"]');
+        if (hiddenInput && hiddenInput.value) {
+            return hiddenInput.value.split(',').filter(v => v);
+        }
+        return [];
+    }
+    
     // Check for checkbox group (multiple checkboxes with same name)
     const checkboxes = fieldElement.querySelectorAll('input[type="checkbox"]');
     if (checkboxes.length > 0) {
@@ -872,15 +934,30 @@ function validateForm() {
         const input = fieldElement.querySelector('input, select, textarea');
         if (!input) continue;
         
-        // Check for multiselect
-        if (input.multiple && field.required) {
+        // Check for multiselect (custom UI)
+        const multiselectContainer = fieldElement.querySelector('.multiselect-options-container');
+        if (multiselectContainer && field.required) {
+            const hiddenInput = fieldElement.querySelector('input[type="hidden"]');
+            if (hiddenInput) {
+                const selectedValues = hiddenInput.value ? hiddenInput.value.split(',').filter(v => v) : [];
+                if (selectedValues.length === 0) {
+                    multiselectContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    multiselectContainer.style.border = '2px solid #ef4444';
+                    setTimeout(() => {
+                        multiselectContainer.style.border = '';
+                    }, 2000);
+                    alert(`${field.label || 'Field'} is required. Please select at least one option.`);
+                    return false;
+                }
+            }
+        } else if (input && input.multiple && field.required) {
             const selectedOptions = Array.from(input.selectedOptions);
             if (selectedOptions.length === 0) {
                 input.focus();
                 input.reportValidity();
                 return false;
             }
-        } else if (field.required && !input.value && !input.checked) {
+        } else if (field.required && input && !input.value && !input.checked) {
             input.focus();
             input.reportValidity();
             return false;
