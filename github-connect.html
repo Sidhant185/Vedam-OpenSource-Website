@@ -449,19 +449,24 @@
                     
                     // Fetch and save GitHub activity data using ORIGINAL user's UID
                     try {
-                        
+                        console.log('Fetching GitHub activity data...');
                         await fetchAndSaveGitHubActivity(originalUID, githubAccessToken);
-                        
+                        console.log('GitHub activity data fetched successfully');
                     } catch (activityError) {
-                        
-                        // Continue even if activity fetch fails
+                        console.error('GitHub activity fetch error:', activityError);
+                        // Show warning but continue - user can refresh later
+                        showError('GitHub connected but some activity data may be incomplete. You can refresh from the GitHub Activity page.');
+                        // Wait a bit for user to see the message
+                        await new Promise(resolve => setTimeout(resolve, 3000));
                     }
             
             // Show success message
             showSuccess('GitHub connected successfully! Redirecting to dashboard...');
             
-            // Redirect immediately to dashboard after connect
+            // Redirect after a short delay
+            setTimeout(() => {
             window.location.href = 'dashboard.html';
+            }, 2000);
                     
                 } catch (error) {
                     
@@ -533,46 +538,57 @@
 
         async function fetchAndSaveGitHubActivity(userId, accessToken) {
             try {
-                
+                console.log('Starting GitHub activity fetch for user:', userId);
                 
                 if (!accessToken) {
                     throw new Error('No GitHub access token provided');
                 }
                 
                 const headers = {
-                    'Authorization': `token ${accessToken}`,
-                    'Accept': 'application/vnd.github.v3+json'
+                        'Authorization': `token ${accessToken}`,
+                        'Accept': 'application/vnd.github.v3+json'
                 };
 
                 // Fetch user info (followers, following, etc.)
+                console.log('Fetching user info...');
                 const userResponse = await fetch('https://api.github.com/user', { headers });
                 if (!userResponse.ok) {
+                    const errorText = await userResponse.text();
+                    console.error('GitHub API error:', userResponse.status, errorText);
                     throw new Error(`GitHub API error: ${userResponse.status}`);
                 }
                 const userData = await userResponse.json();
                 const username = userData.login;
+                console.log('User info fetched:', username);
                 
-                // Fetch ALL repositories with pagination
+                // Fetch ALL repositories with pagination (limit to prevent infinite loops)
                 let repositories = [];
                 let page = 1;
                 let hasMore = true;
+                const maxPages = 50; // Limit to 5000 repos max
                 
-                while (hasMore) {
+                console.log('Fetching repositories...');
+                while (hasMore && page <= maxPages) {
                     const reposResponse = await fetch(`https://api.github.com/user/repos?per_page=100&page=${page}&sort=updated`, { headers });
-                    
-                    if (!reposResponse.ok) {
-                        throw new Error(`GitHub API error: ${reposResponse.status}`);
+                
+                if (!reposResponse.ok) {
+                        const errorText = await reposResponse.text();
+                        console.error(`Repos page ${page} error:`, reposResponse.status, errorText);
+                    throw new Error(`GitHub API error: ${reposResponse.status}`);
                     }
                     
                     const pageRepos = await reposResponse.json();
                     repositories = repositories.concat(pageRepos);
+                    console.log(`Fetched ${pageRepos.length} repos from page ${page}, total: ${repositories.length}`);
                     
                     // Check if there are more pages
                     hasMore = pageRepos.length === 100;
                     page++;
                 }
+                console.log(`Total repositories fetched: ${repositories.length}`);
                 
                 // Use Search API for complete PR counts and data
+                console.log('Fetching PR counts using Search API...');
                 let openPRs = 0, closedPRs = 0, mergedPRs = 0, totalIssues = 0;
                 let recentPRs = [];
                 
@@ -588,21 +604,34 @@
                     if (openPRsRes.ok) {
                         const data = await openPRsRes.json();
                         openPRs = data.total_count || 0;
+                        console.log('Open PRs:', openPRs);
+                    } else {
+                        console.warn('Failed to fetch open PRs count:', openPRsRes.status);
                     }
                     if (mergedPRsRes.ok) {
                         const data = await mergedPRsRes.json();
                         mergedPRs = data.total_count || 0;
+                        console.log('Merged PRs:', mergedPRs);
+                    } else {
+                        console.warn('Failed to fetch merged PRs count:', mergedPRsRes.status);
                     }
                     if (closedPRsRes.ok) {
                         const data = await closedPRsRes.json();
                         closedPRs = data.total_count || 0;
+                        console.log('Closed PRs:', closedPRs);
+                    } else {
+                        console.warn('Failed to fetch closed PRs count:', closedPRsRes.status);
                     }
                     if (issuesRes.ok) {
                         const data = await issuesRes.json();
                         totalIssues = data.total_count || 0;
+                        console.log('Total issues:', totalIssues);
+                    } else {
+                        console.warn('Failed to fetch issues count:', issuesRes.status);
                     }
                     
                     // Fetch detailed PR list (up to 100 most recent)
+                    console.log('Fetching detailed PR list...');
                     const prSearchRes = await fetch(`https://api.github.com/search/issues?q=author:${username}+type:pr&sort=created&order=desc&per_page=100`, { headers });
                     if (prSearchRes.ok) {
                         const prData = await prSearchRes.json();
@@ -619,24 +648,32 @@
                             merged: pr.pull_request && pr.pull_request.merged_at ? true : false,
                             merged_at: pr.pull_request && pr.pull_request.merged_at ? pr.pull_request.merged_at : null
                         }));
+                        console.log(`Fetched ${recentPRs.length} detailed PRs`);
+                    } else {
+                        console.warn('Failed to fetch detailed PRs:', prSearchRes.status);
                     }
                 } catch (searchError) {
                     console.error('Search API error:', searchError);
+                    // Continue with zeros - non-critical
                 }
                 
                 // Fetch recent events for commits count
+                console.log('Fetching recent events...');
                 let events = [];
                 let commits = 0;
                 let contributions = 0;
                 
                 try {
                     const eventsResponse = await fetch(`https://api.github.com/users/${username}/events?per_page=100`, { headers });
-                    if (eventsResponse.ok) {
-                        events = await eventsResponse.json();
+                        if (eventsResponse.ok) {
+                            events = await eventsResponse.json();
                         commits = events.filter(event => event.type === 'PushEvent').reduce((total, event) => {
                             return total + (event.payload && event.payload.commits ? event.payload.commits.length : 0);
                         }, 0);
                         contributions = events.length;
+                        console.log(`Events fetched: ${events.length}, Commits: ${commits}`);
+                    } else {
+                        console.warn('Failed to fetch events:', eventsResponse.status);
                     }
                 } catch (eventsError) {
                     console.error('Events API error:', eventsError);
@@ -646,9 +683,11 @@
                 const totalStars = repositories.reduce((sum, repo) => sum + repo.stargazers_count, 0);
                 const totalForks = repositories.reduce((sum, repo) => sum + repo.forks_count, 0);
                 
-                // Aggregate languages across ALL repos
+                // Aggregate languages across repos (limit to prevent rate limiting)
+                console.log('Aggregating languages across repos...');
                 const languagesMap = {};
-                const languagePromises = repositories.slice(0, 100).map(async (repo) => {
+                const reposToCheck = Math.min(repositories.length, 100); // Limit to 100 repos for performance
+                const languagePromises = repositories.slice(0, reposToCheck).map(async (repo) => {
                     try {
                         const langRes = await fetch(repo.languages_url, { headers });
                         if (langRes.ok) {
@@ -658,10 +697,11 @@
                             });
                         }
                     } catch (e) {
-                        console.error('Language fetch error:', e);
+                        console.error(`Language fetch error for ${repo.name}:`, e);
                     }
                 });
                 await Promise.all(languagePromises);
+                console.log(`Languages aggregated: ${Object.keys(languagesMap).length} languages found`);
                 
                 // Build activity data matching exact Firebase schema
                 const activityData = {
@@ -711,16 +751,17 @@
                 
                 
                 // Save activity data to the same Members document
-                
+                console.log('Saving GitHub activity to Firestore...');
                 await window.setDoc(window.doc(window.db, 'Members', userId), {
                     githubActivity: activityData,
                     lastActivityUpdate: new Date().toISOString()
                 }, { merge: true });
                 
-                
+                console.log('GitHub activity successfully saved to Firestore');
                 
             } catch (error) {
-                
+                console.error('Fatal error in fetchAndSaveGitHubActivity:', error);
+                console.error('Error stack:', error.stack);
                 throw error;
             }
         }
