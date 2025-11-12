@@ -22,7 +22,8 @@
 }
 
 .form-fill-container {
-    max-width: 850px;
+    max-width: 75%;
+    min-width: 700px;
     margin: 0 auto;
     padding: 1.5rem 1.75rem;
     padding-top: 100px;
@@ -95,7 +96,7 @@
 }
 
 .form-header h1 {
-    font-size: 1.875rem;
+    font-size: 2.5rem;
     font-weight: 800;
     color: #1f2937;
     margin-bottom: 0.75rem;
@@ -310,8 +311,8 @@
     gap: 0.5rem;
     font-weight: 700;
     color: #1f2937;
-    margin-bottom: 0.75rem;
-    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
     letter-spacing: -0.015em;
     line-height: 1.4;
     position: relative;
@@ -357,7 +358,8 @@
 .field-help {
     font-size: 0.875rem;
     color: #4b5563;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
+    margin-top: 0.25rem;
     line-height: 1.5;
     padding: 0.625rem 0.875rem;
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.03));
@@ -1130,17 +1132,19 @@ input[type="time"]:hover::-webkit-calendar-picker-indicator {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 500px;
+    min-height: 600px;
+    padding: 2rem;
 }
 
 .success-content {
     text-align: center;
-    background: white;
-    padding: 4rem 3rem;
-    border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    max-width: 550px;
-    border: 2px solid rgba(16, 185, 129, 0.2);
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    padding: 4.5rem 4rem;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 24px rgba(0, 0, 0, 0.1);
+    max-width: 650px;
+    width: 100%;
+    border: 3px solid rgba(16, 185, 129, 0.3);
     position: relative;
     overflow: hidden;
 }
@@ -1151,59 +1155,125 @@ input[type="time"]:hover::-webkit-calendar-picker-indicator {
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #10b981, #059669);
+    height: 5px;
+    background: linear-gradient(90deg, #10b981, #059669, #34d399, #10b981);
+    background-size: 200% 100%;
+    animation: gradientShift 3s ease infinite;
+}
+
+.success-content::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+    animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
 }
 
 .success-content i {
-    font-size: 5rem;
+    font-size: 6rem;
     color: #10b981;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     display: block;
-    animation: scaleIn 0.5s ease-out;
+    animation: scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
 }
 
 @keyframes scaleIn {
-    from {
-        transform: scale(0);
+    0% {
+        transform: scale(0) rotate(-180deg);
         opacity: 0;
     }
-    to {
-        transform: scale(1);
+    60% {
+        transform: scale(1.2) rotate(10deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
         opacity: 1;
     }
 }
 
 .success-content h2 {
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 800;
     color: #1f2937;
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(135deg, #1f2937, #374151);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
 }
 
 .success-content p {
-    color: #6b7280;
-    font-size: 1.1rem;
-    margin-bottom: 2.5rem;
-    line-height: 1.6;
+    color: #4b5563;
+    font-size: 1.15rem;
+    margin-bottom: 3rem;
+    line-height: 1.7;
+    position: relative;
+    z-index: 1;
+    font-weight: 400;
 }
 
 .success-content .btn-primary {
-    padding: 1rem 2.5rem;
+    padding: 1.125rem 3rem;
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
     border: none;
-    border-radius: 12px;
+    border-radius: 14px;
     font-weight: 700;
     font-size: 1.05rem;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    position: relative;
+    z-index: 1;
+    letter-spacing: 0.01em;
+    overflow: hidden;
+}
+
+.success-content .btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.success-content .btn-primary:hover::before {
+    width: 400px;
+    height: 400px;
 }
 
 .success-content .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+}
+
+.success-content .btn-primary:active {
+    transform: translateY(-1px) scale(0.98);
 }
 
 /* Error Message */
@@ -1407,6 +1477,21 @@ input[type="time"]:hover::-webkit-calendar-picker-indicator {
     .form-fill-container {
         padding: 1.5rem 1.25rem;
         padding-top: 100px;
+        max-width: 95%;
+        min-width: auto;
+    }
+    
+    .success-content {
+        padding: 3rem 2rem;
+        max-width: 100%;
+    }
+    
+    .success-content h2 {
+        font-size: 2rem;
+    }
+    
+    .success-content i {
+        font-size: 4.5rem;
     }
     
     .form-header {
