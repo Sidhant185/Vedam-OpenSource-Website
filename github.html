@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GitHub Activity - Vedam Open Source Club</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%23667eea'/><stop offset='100%25' style='stop-color:%23764ba2'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'>V</text></svg>">
     <link rel="stylesheet" href="styles.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
@@ -421,21 +421,59 @@
         .half-grid { grid-template-columns: 1fr; }
       }
 
-      /* Contribution heatmap (CSS grid like GitHub) */
+      /* Contribution heatmap (CSS grid like GitHub) - Enhanced */
       .heatmap-grid {
         display: grid;
         grid-auto-flow: column;
-        grid-template-rows: repeat(7, 12px);
-        grid-auto-columns: 12px;
-        gap: 3px;
-        padding: 0.5rem;
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
+        grid-template-rows: repeat(7, 14px);
+        grid-auto-columns: 14px;
+        gap: 4px;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f8fafc, #ffffff);
+        border: 2px solid #e2e8f0;
+        border-radius: 16px;
         overflow: auto;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        max-width: 100%;
       }
+      
       .heatmap-cell {
-        width: 12px; height: 12px; border-radius: 2px; background: #e5e7eb;
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        background: #ebedf0;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: 1px solid transparent;
+      }
+      
+      .heatmap-cell:hover {
+        transform: scale(1.3);
+        border-color: #667eea;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        z-index: 10;
+      }
+      
+      .heatmap-legend {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+        font-size: 0.85rem;
+        color: #6b7280;
+      }
+      
+      .heatmap-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+      
+      .heatmap-legend-box {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
       }
 
       /* Tabs Section */
@@ -965,9 +1003,30 @@
           </div>
 
           <!-- Contribution Heatmap (centered) -->
-          <div class="chart-container" id="heatmapContainer" style="display:none; text-align:center;">
-            <h3>Contribution Calendar (Last 12 Months)</h3>
+          <div class="chart-container" id="heatmapContainer" style="display:none;">
+            <h3 style="margin-bottom: 1.5rem;">
+              <i class="fas fa-calendar-alt"></i> Contribution Calendar (Last 12 Months)
+            </h3>
             <div id="heatmapPlaceholder" class="heatmap-grid" style="margin: 0 auto;"></div>
+            <div class="heatmap-legend">
+              <span style="margin-right: 0.5rem;">Less</span>
+              <div class="heatmap-legend-item">
+                <div class="heatmap-legend-box" style="background: #ebedf0;"></div>
+              </div>
+              <div class="heatmap-legend-item">
+                <div class="heatmap-legend-box" style="background: #c6e48b;"></div>
+              </div>
+              <div class="heatmap-legend-item">
+                <div class="heatmap-legend-box" style="background: #7bc96f;"></div>
+              </div>
+              <div class="heatmap-legend-item">
+                <div class="heatmap-legend-box" style="background: #239a3b;"></div>
+              </div>
+              <div class="heatmap-legend-item">
+                <div class="heatmap-legend-box" style="background: #196127;"></div>
+              </div>
+              <span style="margin-left: 0.5rem;">More</span>
+            </div>
           </div>
 
           <!-- Tabbed Details Section -->
@@ -1567,6 +1626,7 @@
         const container = document.getElementById('heatmapPlaceholder');
         if (!container) return;
         container.innerHTML = '';
+        
         // Build a flat list by week columns
         const weeks = Array.isArray(calendar.weeks) ? calendar.weeks : [];
         weeks.forEach(week => {
@@ -1575,16 +1635,33 @@
           for (let i = 0; i < 7; i++) {
             const day = days[i] || {};
             const count = day.contributionCount || 0;
-            // Color scale (greens) inspired by GitHub
+            
+            // Enhanced color scale with more vibrant greens
             let color = '#ebedf0';
             if (count > 0) color = '#c6e48b';
             if (count > 3) color = '#7bc96f';
             if (count > 7) color = '#239a3b';
             if (count > 12) color = '#196127';
+            
             const cell = document.createElement('div');
             cell.className = 'heatmap-cell';
             cell.style.background = color;
-            cell.title = `${count} contributions${day.date ? ' on ' + day.date : ''}`;
+            
+            // Enhanced tooltip with formatted date
+            const date = day.date ? new Date(day.date).toLocaleDateString('en-US', { 
+              weekday: 'short', 
+              month: 'short', 
+              day: 'numeric', 
+              year: 'numeric' 
+            }) : '';
+            cell.title = `${count} contribution${count !== 1 ? 's' : ''}${date ? ' on ' + date : ''}`;
+            
+            // Add data attribute for potential interactions
+            if (day.date) {
+              cell.setAttribute('data-date', day.date);
+              cell.setAttribute('data-count', count);
+            }
+            
             container.appendChild(cell);
           }
         });
