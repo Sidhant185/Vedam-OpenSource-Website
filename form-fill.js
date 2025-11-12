@@ -8,13 +8,22 @@ let userData = null;
 
 // Helper function to wait for Firebase initialization
 async function waitForFirebase() {
+    // Wait for module script to complete
     let attempts = 0;
-    while (!window.auth && attempts < 50) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+    while (!window.firebaseReady && attempts < 100) {
+        await new Promise(resolve => setTimeout(resolve, 50));
         attempts++;
     }
+    
+    // Wait for auth to be available
+    attempts = 0;
+    while (!window.auth && attempts < 100) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        attempts++;
+    }
+    
     if (!window.auth) {
-        console.error('Firebase failed to initialize');
+        console.error('Firebase failed to initialize after waiting');
         // Try to initialize manually if not done
         if (window.initializeFirebase) {
             await window.initializeFirebase();
