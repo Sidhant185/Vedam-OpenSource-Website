@@ -239,6 +239,9 @@ function renderForm() {
     
     // Set up event listeners for conditional logic
     setupConditionalLogicListeners();
+    
+    // Set up multiselect count updates
+    setupMultiselectListeners();
 }
 
 // Render section
@@ -523,16 +526,22 @@ function renderMultiselect(field, value) {
             ${field.required ? '<span class="required">*</span>' : ''}
         </label>
         ${field.helpText ? `<p class="field-help">${field.helpText}</p>` : ''}
-        <select 
-            id="${field.id}" 
-            name="${field.id}"
-            class="form-select form-multiselect"
-            multiple
-            ${field.required ? 'required' : ''}
-            ${field.readonly ? 'disabled' : ''}
-        >
-            ${options}
-        </select>
+        <div class="multiselect-wrapper">
+            <select 
+                id="${field.id}" 
+                name="${field.id}"
+                class="form-select form-multiselect"
+                multiple
+                ${field.required ? 'required' : ''}
+                ${field.readonly ? 'disabled' : ''}
+                data-field-id="${field.id}"
+            >
+                ${options}
+            </select>
+            <div class="multiselect-selected-count" id="${field.id}_count">
+                <span class="count-text">0 selected</span>
+            </div>
+        </div>
     `;
 }
 
@@ -737,6 +746,36 @@ function setupConditionalLogicListeners() {
     });
 }
 
+// Multiselect Functions
+function setupMultiselectListeners() {
+    document.querySelectorAll('.form-multiselect').forEach(select => {
+        // Update count on load
+        updateMultiselectCount(select);
+        
+        // Update count on change
+        select.addEventListener('change', function() {
+            updateMultiselectCount(this);
+        });
+    });
+}
+
+function updateMultiselectCount(select) {
+    const selectedCount = select.selectedOptions.length;
+    const countElement = document.getElementById(`${select.id}_count`);
+    if (countElement) {
+        const countText = countElement.querySelector('.count-text');
+        if (countText) {
+            if (selectedCount === 0) {
+                countText.textContent = '0 selected';
+                countElement.classList.remove('has-selection');
+            } else {
+                countText.textContent = `${selectedCount} ${selectedCount === 1 ? 'item' : 'items'} selected`;
+                countElement.classList.add('has-selection');
+            }
+        }
+    }
+}
+
 function updateConditionalFields() {
     if (!currentFormData || !currentFormData.fields) return;
     
@@ -822,7 +861,15 @@ function validateForm() {
         const input = fieldElement.querySelector('input, select, textarea');
         if (!input) continue;
         
-        if (field.required && !input.value && !input.checked) {
+        // Check for multiselect
+        if (input.multiple && field.required) {
+            const selectedOptions = Array.from(input.selectedOptions);
+            if (selectedOptions.length === 0) {
+                input.focus();
+                input.reportValidity();
+                return false;
+            }
+        } else if (field.required && !input.value && !input.checked) {
             input.focus();
             input.reportValidity();
             return false;
