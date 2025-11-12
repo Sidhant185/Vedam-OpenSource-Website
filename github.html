@@ -966,9 +966,20 @@
       }
 
       function displayActivity(activity) {
+        // Debug: Log activity data to verify commits are present
+        console.log('Displaying activity data:', {
+          commits: activity.commits,
+          contributions: activity.contributions,
+          pullRequests: activity.pullRequests,
+          totalStars: activity.totalStars
+        });
+        
         // Overview Cards per Data_Visualization_Strategy.md
         const overview = document.getElementById('overviewCards');
         const totalRepos = (activity.publicRepos || 0) + (activity.privateRepos || 0) || (activity.reposContributed || 0);
+        const commitsValue = activity.commits || 0;
+        console.log('Commits value for display:', commitsValue);
+        
         const primaryCards = [
           { label: 'Total Repositories', value: totalRepos, icon: 'fas fa-folder' },
           { label: 'Total Stars', value: activity.totalStars || 0, icon: 'fas fa-star' },
@@ -976,7 +987,7 @@
           { label: 'Total Pull Requests', value: activity.pullRequests || 0, icon: 'fas fa-code-branch' },
         ];
         const secondaryCards = [
-          { label: 'Total Commits', value: activity.commits || 0, icon: 'fas fa-laptop-code' },
+          { label: 'Total Commits', value: commitsValue, icon: 'fas fa-laptop-code' },
           { label: 'Total Forks', value: activity.totalForks || 0, icon: 'fas fa-code-branch' },
           { label: 'Total Issues', value: activity.issues || 0, icon: 'fas fa-bug' },
           { label: 'Followers', value: activity.followers || 0, icon: 'fas fa-user-friends' },
@@ -1320,6 +1331,7 @@
         // Fetch ALL commits using Search API (lifetime data)
         let commits = 0;
         let contributions = 0;
+        let events = []; // Declare events at top level for use later
         
         try {
           // Use Search API to get complete commit count (all time)
@@ -1336,23 +1348,22 @@
             console.log(`Total commits (lifetime): ${commits}`);
           } else {
             console.warn('Failed to fetch commits count:', commitsSearchRes.status);
-            // Fallback to events API for recent commits
-            const eventsRes = await fetch(`https://api.github.com/users/${username}/events?per_page=100`, { headers });
-            if (eventsRes.ok) {
-              const events = await eventsRes.json();
+          }
+          
+          // Get contributions count and events for issues count
+          const eventsRes = await fetch(`https://api.github.com/users/${username}/events?per_page=100`, { headers });
+          if (eventsRes.ok) {
+            events = await eventsRes.json();
+            contributions = events.length;
+            console.log(`Recent contributions: ${contributions}`);
+            
+            // Fallback: If commits search failed, use events for commits count
+            if (commits === 0) {
               commits = events.filter(event => event.type === 'PushEvent').reduce((total, event) => {
                 return total + (event.payload && event.payload.commits ? event.payload.commits.length : 0);
               }, 0);
               console.log(`Fallback: Recent commits from events: ${commits}`);
             }
-          }
-          
-          // Get contributions count from events
-          const eventsRes = await fetch(`https://api.github.com/users/${username}/events?per_page=100`, { headers });
-          if (eventsRes.ok) {
-            const events = await eventsRes.json();
-            contributions = events.length;
-            console.log(`Recent contributions: ${contributions}`);
           }
         } catch (commitsError) {
           console.error('Commits API error:', commitsError);
@@ -1360,7 +1371,7 @@
           try {
             const eventsRes = await fetch(`https://api.github.com/users/${username}/events?per_page=100`, { headers });
             if (eventsRes.ok) {
-              const events = await eventsRes.json();
+              events = await eventsRes.json();
               commits = events.filter(event => event.type === 'PushEvent').reduce((total, event) => {
                 return total + (event.payload && event.payload.commits ? event.payload.commits.length : 0);
               }, 0);
@@ -1392,13 +1403,13 @@
         await Promise.all(languagesPromises);
 
         // Build activity data matching exact Firebase schema
-        return {
+        const activityData = {
           // Counts
           commits: commits,
           contributions: contributions,
           followers: user.followers || 0,
           following: user.following || 0,
-          issues: events.filter(e => e.type === 'IssuesEvent').length,
+          issues: events && events.length > 0 ? events.filter(e => e.type === 'IssuesEvent').length : 0,
           totalIssues: totalIssues,
           openPRs: openPRs,
           closedPRs: closedPRs,
@@ -1425,6 +1436,15 @@
           reposContributed: repositories.length,
           topRepos: repositories.sort((a,b)=>b.stargazers_count-a.stargazers_count).slice(0,5).map(r=>({ name:r.name, stars:r.stargazers_count, forks:r.forks_count, language:r.language, url:r.html_url })),
         };
+        
+        console.log('Activity data prepared:', {
+          commits: activityData.commits,
+          contributions: activityData.contributions,
+          pullRequests: activityData.pullRequests,
+          totalStars: activityData.totalStars
+        });
+        
+        return activityData;
       }
 
       function renderHeatmap(calendar) {
