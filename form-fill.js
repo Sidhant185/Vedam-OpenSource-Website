@@ -6,8 +6,27 @@ let currentUser = null;
 let formStartTime = null;
 let userData = null;
 
+// Helper function to wait for Firebase initialization
+async function waitForFirebase() {
+    let attempts = 0;
+    while (!window.auth && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+    }
+    if (!window.auth) {
+        console.error('Firebase failed to initialize');
+        // Try to initialize manually if not done
+        if (window.initializeFirebase) {
+            await window.initializeFirebase();
+        }
+    }
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async function() {
+    // Wait for Firebase to be fully initialized first
+    await waitForFirebase();
+    
     // Check authentication
     if (!window.auth) {
         console.error('Firebase auth not initialized');
